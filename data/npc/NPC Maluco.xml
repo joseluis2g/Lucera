@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<npc name="NPC Maluco" script="NPC Maluco.lua" walkinterval="2000" floorchange="0">
+	<health now="100" max="100" />
+	<look type="128" head="40" body="37" legs="116" feet="95" addons="0" />
+	<parameters>
+		<parameter key="message_greet" value="Ola, |PLAYERNAME|. Aproveite enquanto estou aqui e compre algo! Fale {trade}." />
+		<parameter key="message_farewell" value="Ate mais." />
+		<parameter key="message_walkaway" value="Mal educado!" />
+		<parameter key="message_sendtrade" value="Aproveite! Provavelmente nao estarei aqui amanha." />
+		<parameter key="module_shop" value="1" />
+		<parameter key="shop_buyable" value="Boots of Vanaheim,2358,30000000;
+			Green Light,23588,2000000;
+			Buggy Backpack,15646,500000;
+			Cake Backpack,22696,500000;
+			Crystal Backpack,18394,1000000;
+			Feedbag,23663,1000000;
+			Pannier Backpack,21475,500000;
+			Umbral Masterblade,22400,15000000;
+			Umbral Master Axe,22406,15000000;
+			Umbral Master Mace,22412,15000000;
+			Umbral Crossbow,22420,15000000;
+			Umbral Bow,22417,15000000;
+			Umbral Spellbook,22423,15000000;
+			Wand of Defiance,18390,5000000;
+			Glacial Rod,18412,5000000;
+			Great Shield,2522,17000000;
+			Winged Helmet,2474,15000000;
+			Dragon Scale Legs,2469,25000000;
+			Native Armor,2508,20000000;
+			Stamina Insignia,10137,10000000;
+			Addon Doll,8982,15000000;
+			Mount Doll,13030,15000000;" />
+	</parameters>
+</npc>

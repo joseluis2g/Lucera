@@ -1,0 +1,9 @@
+------------------------------
+Name: Khaliye [Map Position: 106, 980, 7] [Player Position: 107, 980, 6]
+Comment: Não dá pra descer a escada, soh de exani hur down
+------------------------------
+Name: Khaliye [Map Position: 123, 977, 6] [Player Position: 123, 977, 6]
+Comment: Não dá pra descer a escada, só de exani hur down
+------------------------------
+Name: Khaliye [Map Position: 103, 1008, 6] [Player Position: 103, 1007, 6]
+Comment: Não tem como descer.

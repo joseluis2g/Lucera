@@ -1,0 +1,6 @@
+------------------------------
+Name: GOD Vanaheim [Map Position: 32370, 32232, 7] [Player Position: 32369, 32234, 7]
+nComment: teste report map
+------------------------------
+Name: GOD Vanaheim [Player Position: 33625, 31895, 6]
+nComment: teste

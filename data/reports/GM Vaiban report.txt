@@ -1,0 +1,30 @@
+------------------------------
+Name: GM Vaiban [Map Position: 32768, 30992, 9] [Player Position: 32766, 30991, 9]
+Comment: AQui o mar vai invadir a HUNT
+------------------------------
+Name: GM Vaiban [Map Position: 32773, 31001, 8] [Player Position: 32772, 30998, 9]
+Comment: Terra Invadindo a HUNT
+------------------------------
+Name: GM Vaiban [Map Position: 32774, 31004, 9] [Player Position: 32774, 31003, 9]
+Comment: ERROR
+------------------------------
+Name: GM Vaiban [Map Position: 33309, 32789, 7] [Player Position: 33306, 32788, 7]
+Comment: MAPA PRETO
+------------------------------
+Name: GM Vaiban [Map Position: 33309, 32772, 7] [Player Position: 33307, 32774, 7]
+Comment: MAPA PRETO NO AZUL
+------------------------------
+Name: GM Vaiban [Map Position: 33310, 32773, 7] [Player Position: 33308, 32775, 7]
+Comment: MAPA PRETO NO AZUL
+------------------------------
+Name: GM Vaiban [Map Position: 33316, 32776, 7] [Player Position: 33314, 32776, 7]
+Comment: PAssagem the BUGADA BAGARAI
+------------------------------
+Name: GM Vaiban [Map Position: 33437, 31265, 7] [Player Position: 33432, 31264, 8]
+Comment: Mar Invadindo a HIVE
+------------------------------
+Name: GM Vaiban [Map Position: 33453, 31222, 7] [Player Position: 33449, 31220, 8]
+Comment: Mar Invadindo a HIVE
+------------------------------
+Name: GM Vaiban [Map Position: 33671, 32291, 8] [Player Position: 33671, 32292, 8]
+Comment: Problemas aqui em Terrorsleep

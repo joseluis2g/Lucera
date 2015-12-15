@@ -1,0 +1,10 @@
+------------------------------
+Name: Diego [Map Position: 33510, 31918, 10] [Player Position: 33510, 31921, 10]
+Comment: Hydra Oramond Ultimo Andar
+------------------------------
+Name: Diego [Map Position: 33509, 31926, 10] [Player Position: 33511, 31926, 10]
+Comment: Hydra Oramond Ultimo Andar
+------------------------------
+Name: Diego [Map Position: 33621, 31979, 7] [Player Position: 33621, 31980, 7]
+Comment: Parte de uma das melhores Hunts de Oramond, segundo o Teorico do Grand Henry
+

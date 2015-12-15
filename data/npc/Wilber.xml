@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<npc name="Wilber" script="Wilber.lua" walkinterval="0" floorchange="0">
+	<health now="100" max="100" />
+	<look type="132" head="97" body="11" legs="118" feet="76" addons="3" />
+	<parameters>
+		<parameter key="module_shop" value="1" />
+		<parameter key="shop_buyable" value="label,2599,1;parcel,2595,15;letter,2597,8;" />
+	</parameters>
+</npc>
