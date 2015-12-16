@@ -350,6 +350,28 @@
 	<!-- Customs -->
 	<monster name="Trailemaw" file="customs/trailemaw.xml" />
 
+	<!-- Dawnport -->
+	<monster name="Brittle Skeleton" file="dawnport/brittle skeleton.xml" />
+	<monster name="Crazed Dwarf" file="dawnport/crazed dwarf.xml" />
+	<monster name="Dawn Scorpion" file="dawnport/dawn scorpion.xml" />
+	<monster name="Dawnfly" file="dawnport/dawnfly.xml" />
+	<monster name="Juvenile Cyclops" file="dawnport/juvenile cyclops.xml" />
+	<monster name="Lesser Fire Devil" file="dawnport/lesser fire devil.xml" />
+	<monster name="Meadow Strider" file="dawnport/meadow strider.xml" />
+	<monster name="Minotaur Bruiser" file="dawnport/minotaur bruiser.xml" />
+	<monster name="Minotaur Occultist" file="dawnport/minotaur occultist.xml" />
+	<monster name="Minotaur Poacher" file="dawnport/minotaur poacher.xml" />
+	<monster name="Mountain Troll" file="dawnport/mountain troll.xml" />
+	<monster name="Muglex Clan Assassin" file="dawnport/muglex clan assassin.xml" />
+	<monster name="Muglex Clan Footman" file="dawnport/muglex clan footman.xml" />
+	<monster name="Muglex Clan Scavenger" file="dawnport/muglex clan scavenger.xml" />
+	<monster name="Salamander Trainer" file="dawnport/salamander trainer.xml" />
+	<monster name="Scar Tribe Shaman" file="dawnport/scar tribe shaman.xml" />
+	<monster name="Scar Tribe Warrior" file="dawnport/scar tribe warrior.xml" />
+	<monster name="Troll Marauder" file="dawnport/troll marauder.xml" />
+	<monster name="Troll-Trained Salamander" file="dawnport/troll-trained salamander.xml" />
+	<monster name="Woodling" file="dawnport/woodling.xml" />
+
 	<!-- Deeplings -->
 	<monster name="Deepling Brawler" file="deeplings/deepling brawler.xml" />
 	<monster name="Deepling Elite" file="deeplings/deepling elite.xml" />

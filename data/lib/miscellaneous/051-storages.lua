@@ -1000,6 +1000,12 @@ GlobalStorage = {
 		DiprathSwitchesGlobalStorage = 201,
 		AshmunrahSwitchesGlobalStorage = 202
 	},
+	Dawnport = {
+		TileKnight = 52503,
+		TilePaladin = 52504,
+		TileDruid = 52505,
+		TileSorcerer = 52506
+	},
 	NaginataStone = 50058,
 	SwordOfFury = 5635
 }
