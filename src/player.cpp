@@ -140,12 +140,6 @@ Player::Player(ProtocolGame_ptr p) :
 
 	bankBalance = 0;
 
-	reward_chest = new Inbox(ITEM_YOUR_REWARD);
-	reward_chest->incrementReferenceCounter();
-
-	corpse_chest = new Inbox(ITEM_YOUR_REWARD);
-	corpse_chest->incrementReferenceCounter();
-
 	inbox = new Inbox(ITEM_INBOX);
 	inbox->incrementReferenceCounter();
 
@@ -244,7 +238,7 @@ std::string Player::getDescription(int32_t lookDistance) const
 		}
 	}
 
-	if (party && !g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM)) {
+	if (party) {
 		if (lookDistance == -1) {
 			s << " Your party has ";
 		} else if (sex == PLAYERSEX_FEMALE) {
@@ -282,13 +276,11 @@ std::string Player::getDescription(int32_t lookDistance) const
 			s << " (" << guildNick << ')';
 		}
 
-		if (!g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM)) {
-			size_t memberCount = guild->getMemberCount();
-			if (memberCount == 1) {
-				s << ", which has 1 member, " << guild->getMembersOnline().size() << " of them online.";
-			} else {
-				s << ", which has " << memberCount << " members, " << guild->getMembersOnline().size() << " of them online.";
-			}
+		size_t memberCount = guild->getMemberCount();
+		if (memberCount == 1) {
+			s << ", which has 1 member, " << guild->getMembersOnline().size() << " of them online.";
+		} else {
+			s << ", which has " << memberCount << " members, " << guild->getMembersOnline().size() << " of them online.";
 		}
 	}
 	return s.str();
@@ -573,7 +565,16 @@ int32_t Player::getPlayerInfo(playerinfo_t playerinfo) const
 	}
 }
 
-void Player::addSkillAdvance(skills_t skill, uint64_t count)
+void Player::setSkillLevel(skills_t skill, uint16_t level)
+{
+	skills[skill].level = level;
+	skills[skill].percent = 0;
+	skills[skill].tries = 0;
+	
+	sendSkills();
+}
+
+void Player::addSkillAdvance(skills_t skill, uint64_t count, bool noticePlayer)
 {
 	uint64_t currReqTries = vocation->getReqSkillTries(skill, skills[skill].level);
 	uint64_t nextReqTries = vocation->getReqSkillTries(skill, skills[skill].level + 1);
@@ -594,9 +595,11 @@ void Player::addSkillAdvance(skills_t skill, uint64_t count)
 		skills[skill].tries = 0;
 		skills[skill].percent = 0;
 
-		std::ostringstream ss;
-		ss << "You advanced to " << getSkillName(skill) << " level " << skills[skill].level << '.';
-		sendTextMessage(MESSAGE_EVENT_ADVANCE, ss.str());
+		if (noticePlayer) {
+			std::ostringstream ss;
+			ss << "You advanced to " << getSkillName(skill) << " level " << skills[skill].level << '.';
+			sendTextMessage(MESSAGE_EVENT_ADVANCE, ss.str());
+		}		
 
 		g_creatureEvents->playerAdvance(this, skill, (skills[skill].level - 1), skills[skill].level);
 
@@ -838,7 +841,7 @@ bool Player::canWalkthrough(const Creature* creature) const
 	}
 
 	const Player* player = creature->getPlayer();
-	if (!player || g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM)) {
+	if (!player) {
 		return false;
 	}
 
@@ -874,7 +877,7 @@ bool Player::canWalkthroughEx(const Creature* creature) const
 	}
 
 	const Player* player = creature->getPlayer();
-	if (!player || g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM)) {
+	if (!player) {
 		return false;
 	}
 
@@ -923,36 +926,6 @@ DepotChest* Player::getDepotChest(uint32_t depotId, bool autoCreate)
 	depotChest->setMaxDepotItems(getMaxDepotItems());
 	depotChests[depotId] = depotChest;
 	return depotChest;
-}
-
-DepotLocker* Player::getMainRewardChest()
-{
-	auto it = depotLockerMap.find(REWARD_CHEST_DEPOT);
-	if (it != depotLockerMap.end()) {
-		reward_chest->setParent(it->second);
-		return it->second;
-	}
-
-	DepotLocker* Main_reward_chest = new DepotLocker(ITEM_REWARD_CHEST_MAIN);
-
-	Main_reward_chest->setDepotId(REWARD_CHEST_DEPOT);
-	Main_reward_chest->setMaxLockerItems(1);
-	Main_reward_chest->internalAddThing(reward_chest);
-
-	depotLockerMap[REWARD_CHEST_DEPOT] = Main_reward_chest;
-	return Main_reward_chest;
-}
-
-DepotLocker* Player::getRewardCorpse()
-{
-	DepotLocker* MAIN_CORPSE_CHEST = new DepotLocker(ITEM_REWARD_CHEST_MAIN);
-
-	MAIN_CORPSE_CHEST->setDepotId(REWARD_CORPSE_DEPOT);
-	MAIN_CORPSE_CHEST->setMaxLockerItems(1);
-	MAIN_CORPSE_CHEST->internalAddThing(corpse_chest);
-
-	depotLockerMap[REWARD_CORPSE_DEPOT] = MAIN_CORPSE_CHEST;
-	return MAIN_CORPSE_CHEST;
 }
 
 DepotLocker* Player::getDepotLocker(uint32_t depotId)
@@ -1685,7 +1658,16 @@ void Player::drainMana(Creature* attacker, int32_t manaLoss)
 	sendStats();
 }
 
-void Player::addManaSpent(uint64_t amount)
+void Player::setMagicLevel(uint16_t level)
+{
+	magLevel = level;
+	manaSpent = 0;
+	magLevelPercent = 0;
+
+	sendStats();
+}
+
+void Player::addManaSpent(uint64_t amount, bool noticePlayer)
 {
 	if (hasFlag(PlayerFlag_NotGainMana)) {
 		return;
@@ -1710,9 +1692,11 @@ void Player::addManaSpent(uint64_t amount)
 		magLevel++;
 		manaSpent = 0;
 
-		std::ostringstream ss;
-		ss << "You advanced to magic level " << magLevel << '.';
-		sendTextMessage(MESSAGE_EVENT_ADVANCE, ss.str());
+		if (noticePlayer) {
+			std::ostringstream ss;
+			ss << "You advanced to magic level " << magLevel << '.';
+			sendTextMessage(MESSAGE_EVENT_ADVANCE, ss.str());
+		}		
 
 		g_creatureEvents->playerAdvance(this, SKILL_MAGLEVEL, magLevel - 1, magLevel);
 
@@ -1789,7 +1773,7 @@ void Player::addExperience(Creature* source, uint64_t exp, bool sendText/* = fal
 		health += vocation->getHPGain();
 		manaMax += vocation->getManaGain();
 		mana += vocation->getManaGain();
-		capacity += vocation->getCapGain();
+		capacity += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 10 : vocation->getCapGain();
 
 		currLevelExp = nextLevelExp;
 		nextLevelExp = Player::getExpForLevel(level + 1);
@@ -1818,6 +1802,11 @@ void Player::addExperience(Creature* source, uint64_t exp, bool sendText/* = fal
 		std::ostringstream ss;
 		ss << "You advanced from Level " << prevLevel << " to Level " << level << '.';
 		sendTextMessage(MESSAGE_EVENT_ADVANCE, ss.str());
+
+		uint32_t blessMaxLevel = g_config.getNumber(ConfigManager::ADVENTURER_BLESSING_MAX_LEVEL);
+		if (level > blessMaxLevel && prevLevel <= blessMaxLevel) {
+			removeBlessing(BLESSING_ADVENTURER);
+		}
 	}
 
 	if (nextLevelExp > currLevelExp) {
@@ -2025,7 +2014,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 
 		if (damage <= 0) {
 			damage = 0;
-			blockType = BLOCK_DEFENSE;
+			blockType = BLOCK_ARMOR;
 		}
 	}
 	return blockType;
@@ -2046,6 +2035,7 @@ void Player::death(Creature* _lastHitCreature)
 
 	if (skillLoss) {
 		uint8_t unfairFightReduction = 100;
+		double deathLossPercent = getLostPercent();
 
 		if (_lastHitCreature) {
 			Player* lastHitPlayer = _lastHitCreature->getPlayer();
@@ -2056,23 +2046,28 @@ void Player::death(Creature* _lastHitCreature)
 				}
 			}
 
-			if (lastHitPlayer) {
-				uint32_t sumLevels = 0;
-				uint32_t inFightTicks = g_config.getNumber(ConfigManager::PZ_LOCKED);
-				for (const auto& it : damageMap) {
-					CountBlock_t cb = it.second;
-					if ((OTSYS_TIME() - cb.ticks) <= inFightTicks) {
-						Player* damageDealer = g_game.getPlayerByID(it.first);
-						if (damageDealer) {
-							sumLevels += damageDealer->getLevel();
+			if (lastHitPlayer) {				
+				if (hasBlessing(BLESSING_ADVENTURER)) {
+					deathLossPercent = 0.;
+				} else {
+					uint32_t sumLevels = 0;
+					uint32_t inFightTicks = g_config.getNumber(ConfigManager::PZ_LOCKED);
+					for (const auto& it : damageMap) {
+						CountBlock_t cb = it.second;
+						if ((OTSYS_TIME() - cb.ticks) <= inFightTicks) {
+							Player* damageDealer = g_game.getPlayerByID(it.first);
+							if (damageDealer) {
+								sumLevels += damageDealer->getLevel();
+							}
 						}
 					}
-				}
 
-				if (sumLevels > level) {
-					double reduce = level / static_cast<double>(sumLevels);
-					unfairFightReduction = std::max<uint8_t>(20, std::floor((reduce * 100) + 0.5));
-				}
+					if (sumLevels > level) {
+						double reduce = level / static_cast<double>(sumLevels);
+						unfairFightReduction = std::max<uint8_t>(20, std::floor((reduce * 100) + 0.5));
+						deathLossPercent = getLostPercent() * (unfairFightReduction / 100.);
+					}					
+				}				
 			}
 		}
 
@@ -2086,11 +2081,6 @@ void Player::death(Creature* _lastHitCreature)
 		}
 
 		sumMana += manaSpent;
-		double deathLossPercent = 0;
-		if (g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM))
-			deathLossPercent = getLostPercent();
-		else
-			deathLossPercent = getLostPercent() * (unfairFightReduction / 100.);
 
 		lostMana = static_cast<uint64_t>(sumMana * deathLossPercent);
 
@@ -2170,29 +2160,31 @@ void Player::death(Creature* _lastHitCreature)
 			}
 		}
 
-		std::bitset<6> bitset(blessings);
-		if (bitset[5]) {
-			Player* lastHitPlayer;
+		if (!hasBlessing(BLESSING_ADVENTURER)) {
+			if (hasBlessing(BLESSING_TWIST_OF_FATE)) {
+				Player* lastHitPlayer;
 
-			if (_lastHitCreature) {
-				lastHitPlayer = _lastHitCreature->getPlayer();
-				if (!lastHitPlayer) {
-					Creature* lastHitMaster = _lastHitCreature->getMaster();
-					if (lastHitMaster) {
-						lastHitPlayer = lastHitMaster->getPlayer();
+				if (_lastHitCreature) {
+					lastHitPlayer = _lastHitCreature->getPlayer();
+					if (!lastHitPlayer) {
+						Creature* lastHitMaster = _lastHitCreature->getMaster();
+						if (lastHitMaster) {
+							lastHitPlayer = lastHitMaster->getPlayer();
+						}
 					}
+				} else {
+					lastHitPlayer = nullptr;
+				}
+
+				if (lastHitPlayer) {
+					removeBlessing(BLESSING_TWIST_OF_FATE);
+				} else {
+					blessings = BLESSING_TWIST_OF_FATE;
 				}
 			} else {
-				lastHitPlayer = nullptr;
+				blessings = 0;
 			}
-
-			if (lastHitPlayer) {
-				bitset.reset(5);
-				blessings = bitset.to_ulong();
-			} else {
-				blessings = 32;
-			}
-		} else {
+		} else if (_lastHitCreature && !_lastHitCreature->getPlayer()) {
 			blessings = 0;
 		}
 
@@ -3584,7 +3576,7 @@ void Player::onAttackedCreature(Creature* target)
 
 	Player* targetPlayer = target->getPlayer();
 	if (targetPlayer && !isPartner(targetPlayer) && !isGuildMate(targetPlayer)) {
-		if (!pzLocked && (g_game.getWorldType() == WORLD_TYPE_PVP_ENFORCED || g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM))) {
+		if (!pzLocked && g_game.getWorldType() == WORLD_TYPE_PVP_ENFORCED) {
 			pzLocked = true;
 			sendIcons();
 		}
@@ -3603,6 +3595,10 @@ void Player::onAttackedCreature(Creature* target)
 
 				if (targetPlayer->getSkull() == SKULL_NONE && getSkull() == SKULL_NONE) {
 					setSkull(SKULL_WHITE);
+
+					if (hasBlessing(BLESSING_ADVENTURER)) {
+						removeBlessing(BLESSING_ADVENTURER);
+					}
 				}
 
 				if (getSkull() == SKULL_NONE) {
@@ -3639,6 +3635,8 @@ void Player::onPlacedCreature()
 	} else {
 		updateItemCount();
 	}
+	sendBlessings();
+	sendUnjustifiedPoints();
 }
 
 void Player::onAttackedCreatureDrainHealth(Creature* target, int32_t points)
@@ -3972,20 +3970,43 @@ void Player::addUnjustifiedDead(const Player* attacked)
 
 	sendTextMessage(MESSAGE_EVENT_ADVANCE, "Warning! The murder of " + attacked->getName() + " was not justified.");
 
-	skullTicks += g_config.getNumber(ConfigManager::FRAG_TIME);
+	unjustifiedKills.push_back(std::pair<std::string, time_t>(attacked->getName(), time(nullptr)));
 
-	if (getSkull() != SKULL_BLACK) {
-		if (g_config.getNumber(ConfigManager::KILLS_TO_BLACK) != 0 && skullTicks > (g_config.getNumber(ConfigManager::KILLS_TO_BLACK) - 1) * static_cast<int64_t>(g_config.getNumber(ConfigManager::FRAG_TIME))) {
-			setSkull(SKULL_BLACK);
-		} else if (getSkull() != SKULL_RED && g_config.getNumber(ConfigManager::KILLS_TO_RED) != 0 && skullTicks > (g_config.getNumber(ConfigManager::KILLS_TO_RED) - 1) * static_cast<int64_t>(g_config.getNumber(ConfigManager::FRAG_TIME))) {
-			setSkull(SKULL_RED);
+	uint8_t dayKills = 0;
+	uint8_t weekKills = 0;
+	uint8_t monthKills = 0;
+
+	for (const auto& it : unjustifiedKills) {
+		const auto diff = time(nullptr) - it.second;
+		if (diff <= 24 * 60 * 60) {
+			dayKills += 1;
+		}
+		if (diff <= 7 * 24 * 60 * 60) {
+			weekKills += 1;
+		}
+		if (diff <= 30 * 24 * 60 * 60) {
+			monthKills += 1;
 		}
 	}
+
+	if (getSkull() != SKULL_BLACK) {
+		if (dayKills >= 2 * g_config.getNumber(ConfigManager::DAY_KILLS_TO_RED) || weekKills >= 2 * g_config.getNumber(ConfigManager::WEEK_KILLS_TO_RED) || monthKills >= 2 * g_config.getNumber(ConfigManager::MONTH_KILLS_TO_RED)) {
+			setSkull(SKULL_BLACK);
+			//start black skull time
+			skullTicks = 45LL * 24 * 60 * 60 * 1000;
+		} else if (dayKills >= g_config.getNumber(ConfigManager::DAY_KILLS_TO_RED) || weekKills >= g_config.getNumber(ConfigManager::WEEK_KILLS_TO_RED) || monthKills >= g_config.getNumber(ConfigManager::MONTH_KILLS_TO_RED)) {
+			setSkull(SKULL_RED);
+			//reset red skull time
+			skullTicks = 30LL * 24 * 60 * 60 * 1000;
+		}
+	}
+
+	sendUnjustifiedPoints();
 }
 
 void Player::checkSkullTicks(int32_t ticks)
 {
-	int32_t newTicks = skullTicks - ticks;
+	int64_t newTicks = skullTicks - ticks;
 	if (newTicks < 0) {
 		skullTicks = 0;
 	} else {
@@ -4005,7 +4026,11 @@ bool Player::isPromoted() const
 
 double Player::getLostPercent() const
 {
-	int32_t blessingCount = std::bitset<5>(blessings).count();
+	int32_t blessingCount;
+	auto _blessings = std::bitset<7>(blessings);
+	_blessings.reset(0); //adventurer
+	_blessings.reset(6); //twist of fate
+	blessingCount = _blessings.count();
 
 	int32_t deathLosePercent = g_config.getNumber(ConfigManager::DEATH_LOSE_PERCENT);
 	if (deathLosePercent != -1) {
@@ -4144,7 +4169,7 @@ PartyShields_t Player::getPartyShield(const Player* player) const
 		return SHIELD_WHITEYELLOW;
 	}
 
-	if (player->party && !g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM)) {
+	if (player->party) {
 		return SHIELD_GRAY;
 	}
 
@@ -4207,7 +4232,7 @@ void Player::clearPartyInvitations()
 
 GuildEmblems_t Player::getGuildEmblem(const Player* player) const
 {
-	if (!player || g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM)) {
+	if (!player) {
 		return GUILDEMBLEM_NONE;
 	}
 
@@ -4229,6 +4254,43 @@ GuildEmblems_t Player::getGuildEmblem(const Player* player) const
 	}
 
 	return GUILDEMBLEM_NEUTRAL;
+}
+
+void Player::sendUnjustifiedPoints()
+{
+	if (client) {
+		double dayKills = 0;
+		double weekKills = 0;
+		double monthKills = 0;
+
+		for (const auto& it : unjustifiedKills) {
+			const auto diff = time(nullptr) - it.second;
+			if (diff <= 24 * 60 * 60) {
+				dayKills += 1;
+			}
+			if (diff <= 7 * 24 * 60 * 60) {
+				weekKills += 1;
+			}
+			if (diff <= 30 * 24 * 60 * 60) {
+				monthKills += 1;
+			}
+		}
+
+		bool isRed = getSkull() == SKULL_RED;
+
+		auto dayMax = ((isRed ? 2 : 1) * g_config.getNumber(ConfigManager::DAY_KILLS_TO_RED));
+		auto weekMax = ((isRed ? 2 : 1) * g_config.getNumber(ConfigManager::WEEK_KILLS_TO_RED));
+		auto monthMax = ((isRed ? 2 : 1) * g_config.getNumber(ConfigManager::MONTH_KILLS_TO_RED));		
+
+		uint8_t dayProgress = std::min(std::round(dayKills / dayMax * 100), 100.0);
+		uint8_t weekProgress = std::min(std::round(weekKills / weekMax * 100), 100.0);
+		uint8_t monthProgress = std::min(std::round(monthKills / monthMax * 100), 100.0);
+		uint8_t skullDuration = 0;
+		if (skullTicks != 0) {
+			skullDuration = std::floor<uint8_t>(skullTicks / (24 * 60 * 60 * 1000));
+		}
+		client->sendUnjustifiedPoints(dayProgress, std::max(dayMax - dayKills, 0.0), weekProgress, std::max(weekMax - weekKills, 0.0), monthProgress, std::max(monthMax - monthKills, 0.0), skullDuration);
+	}
 }
 
 uint8_t Player::getCurrentMount() const

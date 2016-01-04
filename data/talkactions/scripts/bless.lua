@@ -1,9 +1,15 @@
-local blesses = {1, 2, 3, 4, 5}
+local blesses = {
+	BLESSING_SPIRITUAL_SHIELDING,
+	BLESSING_EMBRACE_OF_TIBIA,
+	BLESSING_FIRE_OF_SUNS,
+	BLESSING_WISDOM_OF_SOLITUDE,
+	BLESSING_SPARK_OF_PHOENIX
+}
 local price = 50000
 
 function onSay(player, words, param)
-	for i = 1, 5 do
-		if player:hasBlessing(i) then
+	for i = 1, #blesses do
+		if player:hasBlessing(blesses[i]) then
 			player:sendCancelMessage("Voce ja possui as blesses.")
 			player:getPosition():sendMagicEffect(CONST_ME_POFF)
 			return false

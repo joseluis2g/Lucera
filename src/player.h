@@ -265,14 +265,6 @@ class Player final : public Creature, public Cylinder
 			return inbox;
 		}
 
-		Inbox* getRewardChestInside() const {
-			return reward_chest;
-		}
-
-		Inbox* getCorpseChest() const {
-			return corpse_chest;
-		}
-
 		uint16_t getClientIcons() const;
 
 		const GuildWarList& getGuildWarList() const {
@@ -321,6 +313,8 @@ class Player final : public Creature, public Cylinder
 
 		GuildEmblems_t getGuildEmblem(const Player* player) const;
 
+		void sendUnjustifiedPoints();
+
 		uint64_t getSpentMana() const {
 			return manaSpent;
 		}
@@ -336,14 +330,16 @@ class Player final : public Creature, public Cylinder
 			bedItem = b;
 		}
 
-		void addBlessing(uint8_t blessing) {
+		void addBlessing(Blessings_t blessing) {
 			blessings |= blessing;
+			sendBlessings();
 		}
-		void removeBlessing(uint8_t blessing) {
+		void removeBlessing(Blessings_t blessing) {
 			blessings &= ~blessing;
+			sendBlessings();
 		}
-		bool hasBlessing(uint8_t value) const {
-			return (blessings & (static_cast<uint8_t>(1) << value)) != 0;
+		bool hasBlessing(Blessings_t value) const {
+			return (blessings & value) != 0;
 		}
 
 		bool isOffline() const {
@@ -521,9 +517,6 @@ class Player final : public Creature, public Cylinder
 
 		DepotChest* getDepotChest(uint32_t depotId, bool autoCreate);
 		DepotLocker* getDepotLocker(uint32_t depotId);
-		DepotLocker* getMainRewardChest();
-		DepotLocker* getRewardChest();
-		DepotLocker* getRewardCorpse();
 		void onReceiveMail();
 		bool isNearDepotBox() const;
 
@@ -650,8 +643,10 @@ class Player final : public Creature, public Cylinder
 
 		void drainHealth(Creature* attacker, int32_t damage) final;
 		void drainMana(Creature* attacker, int32_t manaLoss) final;
-		void addManaSpent(uint64_t amount);
-		void addSkillAdvance(skills_t skill, uint64_t count);
+		void addManaSpent(uint64_t amount, bool noticePlayer = true);
+		void setMagicLevel(uint16_t level);
+		void addSkillAdvance(skills_t skill, uint64_t count, bool noticePlayer = true);
+		void setSkillLevel(skills_t skill, uint16_t level);
 
 		int32_t getArmor() const final;
 		int32_t getDefense() const final;
@@ -1087,6 +1082,11 @@ class Player final : public Creature, public Cylinder
 				client->sendChannel(channelId, channelName, channelUsers, invitedUsers);
 			}
 		}
+		void sendBlessings() {
+			if (client) {
+				client->sendBlessings(blessings);
+			}
+		}
 		void sendTutorial(uint8_t tutorialId) {
 			if (client) {
 				client->sendTutorial(tutorialId);
@@ -1257,13 +1257,13 @@ class Player final : public Creature, public Cylinder
 		int64_t lastPong;
 		int64_t nextAction;
 
+		std::vector<std::pair<std::string, time_t>> unjustifiedKills;
+
 		BedItem* bedItem;
 		Guild* guild;
 		const GuildRank* guildRank;
 		Group* group;
 		Inbox* inbox;
-		Inbox* reward_chest;
-		Inbox* corpse_chest;
 		Item* tradeItem;
 		Item* inventory[CONST_SLOT_LAST + 1];
 		Item* writeItem;

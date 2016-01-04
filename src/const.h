@@ -463,14 +463,6 @@ enum item_t : uint16_t {
 	ITEM_MALE_CORPSE = 3058,
 	ITEM_FEMALE_CORPSE = 3065,
 
-	ITEM_YOUR_REWARD = 21518,
-
-	REWARD_CHEST_DEPOT = 100,
-	REWARD_CORPSE_DEPOT = 99,
-
-	ITEM_REWARD_CHEST_MAIN = 21584,
-	ITEM_REWARD_CHEST_AID = 24343,
-
 	ITEM_FULLSPLASH = 2016,
 	ITEM_SMALLSPLASH = 2019,
 
@@ -523,6 +515,16 @@ enum PlayerFlags : uint64_t {
 	PlayerFlag_IgnoreWeaponCheck = static_cast<uint64_t>(1) << 35,
 	PlayerFlag_CannotBeMuted = static_cast<uint64_t>(1) << 36,
 	PlayerFlag_IsAlwaysPremium = static_cast<uint64_t>(1) << 37,
+};
+
+enum Blessings_t : uint8_t {
+	BLESSING_ADVENTURER = 1 << 0,
+	BLESSING_SPIRITUAL_SHIELDING = 1 << 1,
+	BLESSING_EMBRACE_OF_TIBIA = 1 << 2,
+	BLESSING_FIRE_OF_SUNS = 1 << 3,	
+	BLESSING_WISDOM_OF_SOLITUDE = 1 << 4,
+	BLESSING_SPARK_OF_PHOENIX = 1 << 5,
+	BLESSING_TWIST_OF_FATE = 1 << 6,
 };
 
 #define CHANNEL_GUILD 0x00

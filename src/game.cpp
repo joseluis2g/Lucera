@@ -4920,7 +4920,7 @@ void Game::playerLeaveParty(uint32_t playerId)
 	}
 
 	Party* party = player->getParty();
-	if (!party || player->hasCondition(CONDITION_INFIGHT)) {
+	if (!party || (player->hasCondition(CONDITION_INFIGHT) && !player->getTile()->hasFlag(TILESTATE_PROTECTIONZONE))) {
 		return;
 	}
 
@@ -4935,7 +4935,7 @@ void Game::playerEnableSharedPartyExperience(uint32_t playerId, bool sharedExpAc
 	}
 
 	Party* party = player->getParty();
-	if (!party || player->hasCondition(CONDITION_INFIGHT)) {
+	if (!party || (player->hasCondition(CONDITION_INFIGHT) && !player->getTile()->hasFlag(TILESTATE_PROTECTIONZONE))) {
 		return;
 	}
 

@@ -420,6 +420,17 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 		} while (result->next());
 	}
 
+	query.str(std::string());
+	query << "SELECT `player_id`, `time`, `target` FROM `player_kills` WHERE `player_id` = " << player->getGUID();
+	if ((result = db->storeQuery(query.str()))) {
+		do {
+			time_t killTime = result->getNumber<time_t>("time");
+			if ((time(nullptr) - killTime) <= 45 * 24 * 60 * 60) {
+				player->unjustifiedKills.push_back(std::pair<std::string, time_t>(result->getString("target"), killTime));
+			}
+		} while (result->next());
+	}
+
 	//load inventory items
 	ItemMap itemMap;
 
@@ -505,67 +516,6 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 				Container* container = it2->second.first->getContainer();
 				if (container) {
 					container->internalAddThing(item);
-				}
-			}
-		}
-	}
-
-	//load reward_items
-	itemMap.clear();
-	
-	query.str(std::string());
-	query << "SELECT `pid`, `sid`, `itemtype`, `count`, `attributes` FROM `player_chestitems` WHERE `player_id` = " << player->getGUID() << " ORDER BY `sid` DESC";
-	if ((result = db->storeQuery(query.str()))) {
-			loadItems(itemMap, result);
-	
-			for (ItemMap::const_reverse_iterator it = itemMap.rbegin(), end = itemMap.rend(); it != end; ++it) {
-					const std::pair<Item*, int32_t>& pair = it->second;
-					Item* item = pair.first;
-					int32_t pid = pair.second;
-	
-					if (pid >= 0 && pid < 100) {
-							player->getRewardChestInside()->internalAddThing(item);
-					}
-					else {
-							ItemMap::const_iterator it2 = itemMap.find(pid);
-	
-							if (it2 == itemMap.end()) {
-									continue;
-							}
-	
-							Container* container = it2->second.first->getContainer();
-							if (container) {
-									container->internalAddThing(item);
-							}
-					}
-			}
-	}
-
-	//load reward_corpse_items
-	itemMap.clear();
-
-	query.str(std::string());
-	query << "SELECT `pid`, `sid`, `itemtype`, `count`, `attributes` FROM `player_corpseitems` WHERE `player_id` = " << player->getGUID() << " ORDER BY `sid` DESC";
-	if ((result = db->storeQuery(query.str()))) {
-		loadItems(itemMap, result);
-		
-		for (ItemMap::const_reverse_iterator it = itemMap.rbegin(), end = itemMap.rend(); it != end; ++it) {
-			const std::pair<Item*, int32_t>& pair = it->second;
-			Item* item = pair.first;
-			int32_t pid = pair.second;
-
-			if (pid >= 0 && pid < 100) {
-				player->getCorpseChest()->internalAddThing(item);
-			} else {
-				ItemMap::const_iterator it2 = itemMap.find(pid);
-
-				if (it2 == itemMap.end()) {
-						continue;
-				}
-
-				Container* container = it2->second.first->getContainer();
-				if (container) {
-						container->internalAddThing(item);
 				}
 			}
 		}
@@ -803,6 +753,27 @@ bool IOLoginData::savePlayer(Player* player)
 		return false;
 	}
 
+	//player kills
+	query.str(std::string());
+	query << "DELETE FROM `player_kills` WHERE `player_id` = " << player->getGUID();
+	if (!db->executeQuery(query.str())) {
+		return false;
+	}
+
+	query.str(std::string());
+
+	DBInsert killsQuery("INSERT INTO `player_kills` (`player_id`, `target`, `time`) VALUES");
+	for (const auto& kill : player->unjustifiedKills) {
+		query << player->getGUID() << ',' << db->escapeString(kill.first) << ',' << kill.second;
+		if (!killsQuery.addRow(query)) {
+			return false;
+		}
+	}
+
+	if (!killsQuery.execute()) {
+		return false;
+	}
+
 	//item saving
 	query << "DELETE FROM `player_items` WHERE `player_id` = " << player->getGUID();
 	if (!db->executeQuery(query.str())) {
@@ -845,42 +816,6 @@ bool IOLoginData::savePlayer(Player* player)
 		if (!saveItems(player, itemList, depotQuery, propWriteStream)) {
 			return false;
 		}
-	}
-
-	//save reward_items items
-	query.str(std::string());
-	query << "DELETE FROM `player_chestitems` WHERE `player_id` = " << player->getGUID();
-	if (!db->executeQuery(query.str())) {
-			return false;
-	}
-
-	DBInsert rewardQuery("INSERT INTO `player_chestitems` (`player_id`, `pid`, `sid`, `itemtype`, `count`, `attributes`) VALUES ");
-	itemList.clear();
-
-	for (Item* item : player->getRewardChestInside()->getItemList()) {
-			itemList.emplace_back(0, item);
-	}
-
-	if (!saveItems(player, itemList, rewardQuery, propWriteStream)) {
-			return false;
-	}
-
-	//player_corpseitems
-	query.str(std::string());
-	query << "DELETE FROM `player_corpseitems` WHERE `player_id` = " << player->getGUID();
-	if (!db->executeQuery(query.str())) {
-			return false;
-	}
-
-	DBInsert rewardCorpseQuery("INSERT INTO `player_corpseitems` (`player_id`, `pid`, `sid`, `itemtype`, `count`, `attributes`) VALUES ");
-	itemList.clear();
-
-	for (Item* item : player->getCorpseChest()->getItemList()) {
-			itemList.emplace_back(0, item);
-	}
-
-	if (!saveItems(player, itemList, rewardCorpseQuery, propWriteStream)) {
-			return false;
 	}
 
 	//save inbox items

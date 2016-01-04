@@ -15,6 +15,8 @@
 	<talkaction words="/s" separator=" " script="place_npc.lua" />
 	<talkaction words="/summon" separator=" " script="place_summon.lua" />
 	<talkaction words="/addpremium" separator=" " script="addpremium.lua" />
+	<talkaction words="/open" separator=" " script="eventos.lua" />
+	<talkaction words="/condition" separator=" " script="removeCondition.lua" />
 
 	<!-- Achievements Commands -->
 	<talkaction words="/addach" separator=" " script="achievements.lua" />
@@ -64,7 +66,7 @@
 	<talkaction words="!stopcast" script="stop_cast.lua" />
 	<talkaction words="!guildpoints" script="guildpoints.lua" />
 
-	<!-- test talkactions
+	<!-- test talkactions -->
 	<talkaction words="!z" separator=" " script="magiceffect.lua" />
-	<talkaction words="!x" separator=" " script="animationeffect.lua" />-->
+	<talkaction words="!x" separator=" " script="animationeffect.lua" />
 </talkactions>

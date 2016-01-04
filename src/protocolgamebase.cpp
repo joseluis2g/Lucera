@@ -475,6 +475,7 @@ void ProtocolGameBase::sendAddCreature(const Creature* creature, const Position&
 	msg.addByte(0x00); // expert mode button enabled
 
 	msg.addString("http://static.tibia.com/images/store/");
+	msg.addByte(0x19);
 	msg.addByte(3);
 
 	writeToOutputBuffer(msg);

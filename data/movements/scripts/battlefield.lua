@@ -13,21 +13,25 @@ function onStepIn(creature, item, position, fromPosition)
 		return player:teleportTo(_Lib_Battle_Info.TeamOne.pos)
 	end
 
-	if Game.getStorageValue(_Lib_Battle_Info.storage_count) > 0 then
-		local getMyTeam = Game.getStorageValue(_Lib_Battle_Info.TeamOne.storage) < Game.getStorageValue(_Lib_Battle_Info.TeamTwo.storage) and {_Lib_Battle_Info.TeamOne.storage,_Lib_Battle_Info.TeamOne.pos,_Lib_Battle_Info.TeamOne.name,conditionBlack} or {_Lib_Battle_Info.TeamTwo.storage,_Lib_Battle_Info.TeamTwo.pos, _Lib_Battle_Info.TeamTwo.name, conditionRed}
-		player:addCondition(getMyTeam[4])
-		player:setStorageValue(getMyTeam[1], 1)
-		Game.setStorageValue(getMyTeam[1], Game.getStorageValue(getMyTeam[1])+1)
-		player:teleportTo(getMyTeam[2])
-		player:sendTextMessage(MESSAGE_INFO_DESCR, "Voce entrou para os " .. getMyTeam[3] .. "!")
-		Game.setStorageValue(_Lib_Battle_Info.storage_count, Game.getStorageValue(_Lib_Battle_Info.storage_count)-1)
+	if Game.getStorageValue(_Lib_Battle_Info.storage_count) == 0 then
+		return player:teleportTo(_Lib_Battle_Info.spectors[math.random(#_Lib_Battle_Info.spectors)])
 	end
 
+	if Game.getStorageValue(_Lib_Battle_Info.storage_count) > 0 then
+		local getMyTeam = Game.getStorageValue(_Lib_Battle_Info.TeamOne.storage) < Game.getStorageValue(_Lib_Battle_Info.TeamTwo.storage) and {_Lib_Battle_Info.TeamOne.storage,_Lib_Battle_Info.TeamOne.pos,_Lib_Battle_Info.TeamOne.name,conditionBlack} or {_Lib_Battle_Info.TeamTwo.storage,_Lib_Battle_Info.TeamTwo.pos, _Lib_Battle_Info.TeamTwo.name, conditionRed}
+		player:registerEvent("battledeath")
+		player:addCondition(getMyTeam[4])
+		player:setStorageValue(getMyTeam[1], 1)
+		Game.setStorageValue(getMyTeam[1], Game.getStorageValue(getMyTeam[1]) + 1)
+		player:teleportTo(getMyTeam[2])
+		player:sendTextMessage(MESSAGE_INFO_DESCR, "Voce entrou para os " .. getMyTeam[3] .. "!")
+		Game.setStorageValue(_Lib_Battle_Info.storage_count, Game.getStorageValue(_Lib_Battle_Info.storage_count) - 1)
+	end
+	
 	if Game.getStorageValue(_Lib_Battle_Info.storage_count) == 0 then
-	removeBattleTp()
-	broadcastMessage("Battlefield vai comecar em 2 munutos, comece a criar sua estrategia de combate!")
-	addEvent(broadcastMessage, 2 * 60 * 1000 - 500, "BattleField vai comecar agora!")
-	addEvent(OpenWallBattle, 2 * 60 * 1000)
+		broadcastMessage("Battlefield vai comecar em 30 segundos, comece a criar sua estrategia de combate!")
+		addEvent(broadcastMessage, 30 * 1000 - 500, "BattleField vai comecar agora!")
+		addEvent(OpenWallBattle, 30 * 1000)
 	end
 	return true
 end

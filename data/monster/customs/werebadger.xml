@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<monster name="Werebadger" nameDescription="a werebadger" race="blood" experience="1600" speed="150" manacost="0">
+	<health now="1700" max="1700" />
+	<look type="729" corpse="24723" />
+	<targetchange interval="4000" chance="10" />
+	<strategy attack="100" defense="0" />
+	<flags>
+		<flag summonable="0" />
+		<flag attackable="1" />
+		<flag hostile="1" />
+		<flag illusionable="0" />
+		<flag convinceable="0" />
+		<flag pushable="0" />
+		<flag canpushitems="1" />
+		<flag canpushcreatures="1" />
+		<flag targetdistance="1" />
+		<flag staticattack="70" />
+		<flag runonhealth="0" />
+	</flags>
+	<attacks>
+		<attack name="melee" interval="2000" min="0" max="-500" />
+	</attacks>
+	<defenses armor="35" defense="35">
+		<defense name="invisible" interval="3000" chance="5" duration="3000">
+			<attribute key="areaEffect" value="blueshimmer" />
+		</defense>
+	</defenses>
+	<elements>
+		<element holyPercent="-5" />
+		<element firePercent="-5" />
+		<element icePercent="-1" />
+		<element deathPercent="1" />
+		<element physicalPercent="1" />
+		<element energyPercent="1" />
+		<element earthPercent="30" />
+	</elements>
+	<immunities>
+		<immunity paralyze="1" />
+		<immunity invisible="1" />
+	</immunities>
+	<voices interval="2000" chance="7">
+		<voice sentence="SNUFFLE" />
+	</voices>
+	<loot>
+		<item id="2152" countmax="3" chance="100000" /><!-- platinum coin -->
+		<item id="2148" countmax="70" chance="83300" /><!-- gold coin -->
+		<item id="8845" chance="23640" /><!-- beetroot -->
+		<item id="24711" chance="15680" /><!-- werebadger skull -->
+		<item id="24707" chance="13180" /><!-- werebadger claws -->
+		<item id="7620" chance="6020" /><!-- mana potion -->
+		<item id="2789" chance="5230" /><!-- brown mushroom -->
+		<item id="2805" chance="5230" /><!-- troll green -->
+		<item id="7589" chance="4660" /><!-- strong mana potion -->
+		<!--<item id="24739" chance="1590" /> moonlight crystals -->
+		<item id="7590" chance="1480" /><!-- great mana potion -->
+		<item id="2214" chance="910" /><!-- ring of healing -->
+		<item id="8922" chance="910" /><!-- wand of voodoo -->
+		<item id="24742" chance="800" /><!-- badger boots -->
+		<item id="2171" chance="450" /><!-- platinum amulet -->
+		<item id="8910" chance="450" /><!-- underworld rod -->
+		<item id="24716" chance="450" /><!-- werewolf amulet -->
+		<item id="24757" chance="110" /><!-- werebadger trophy -->
+	</loot>
+</monster>

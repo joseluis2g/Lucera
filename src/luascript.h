@@ -837,15 +837,13 @@ class LuaScriptInterface
 		static int luaPlayerGetCapacity(lua_State* L);
 		static int luaPlayerSetCapacity(lua_State* L);
 
+		static int luaPlayerGetKills(lua_State* L);
+		static int luaPlayerSetKills(lua_State* L);
+
 		static int luaPlayerGetFreeCapacity(lua_State* L);
 
 		static int luaPlayerGetDepotChest(lua_State* L);
 		static int luaPlayerGetInbox(lua_State* L);
-
-		static int luaPlayerGetRewardCorpse(lua_State* L);
-		static int luaPlayerGetRewardChestInbox(lua_State* L);
-		static int luaPlayerAddRewardChest(lua_State* L);
-		static int luaPlayerAddRewardCorpse(lua_State* L);
 
 		static int luaPlayerGetSkullTime(lua_State* L);
 		static int luaPlayerSetSkullTime(lua_State* L);
@@ -857,6 +855,7 @@ class LuaScriptInterface
 		static int luaPlayerGetLevel(lua_State* L);
 
 		static int luaPlayerGetMagicLevel(lua_State* L);
+		static int luaPlayerSetMagicLevel(lua_State* L);
 		static int luaPlayerGetBaseMagicLevel(lua_State* L);
 		static int luaPlayerSetMaxMana(lua_State* L);
 		static int luaPlayerGetManaSpent(lua_State* L);
@@ -867,6 +866,7 @@ class LuaScriptInterface
 		static int luaPlayerGetSkillPercent(lua_State* L);
 		static int luaPlayerGetSkillTries(lua_State* L);
 		static int luaPlayerAddSkillTries(lua_State* L);
+		static int luaPlayerSetSkillLevel(lua_State* L);
 
 		static int luaPlayerAddOfflineTrainingTime(lua_State* L);
 		static int luaPlayerGetOfflineTrainingTime(lua_State* L);

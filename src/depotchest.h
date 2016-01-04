@@ -55,7 +55,6 @@ class DepotChest final : public Container
 
 	private:
 		uint32_t maxDepotItems;
-		uint32_t depotId;
 };
 
 #endif

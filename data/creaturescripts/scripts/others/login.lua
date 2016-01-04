@@ -28,9 +28,7 @@ local events = {
 	'AdvanceRookgaard',
 	'PythiusTheRotten',
 	'DropLoot',
-	'fire_event',
-	'healthchange',
-	'RewardChest'
+	'fire_event'
 }
 
 local function onMovementRemoveProtection(cid, oldPosition, time)
@@ -71,47 +69,31 @@ function onLogin(player)
 		player:addPremiumDays(15)
 	end
 
-	-- Reward Chest
-	if not REWARD_CHEST.LOOT[player:getGuid()] then
-		REWARD_CHEST.LOOT[player:getGuid()] = {}
+	-- Premium System
+	if player:getPremiumDays() > 0 and player:getStorageValue(Storage.Promotion) <= 0 then
+		player:setStorageValue(Storage.Promotion, 1)
 	end
 
-	REWARD_CHEST.LOOT[player:getGuid()]['guid'] = player:getGuid()
-	REWARD_CHEST.LOOT[player:getGuid()]['uid'] = player.uid
-	REWARD_CHEST.LOOT[player:getGuid()]['name'] = player:getName()
-
-	if REWARD_CHEST.LOOT[player:getGuid()]['uid'] ~= player.uid then
-		REWARD_CHEST.LOOT[player:getGuid()]['uid'] = player.uid
+	if not player:isPremium() and player:getStorageValue(Storage.Promotion) >= 1 then
+		local town = Town(2)
+		player:setStorageValue(Storage.Promotion, 0)
+		player:setOutfit(
+			{
+				lookBody = 113,
+				lookAddons = 0,
+				lookType = player:getSex() == 0 and 137 or 129,
+				lookTypeEx = 0,
+				lookHead = 95,
+				lookMount = 0,
+				lookLegs = 39,
+				lookFeet = 115,
+			}
+		)
+		player:setTown(town)
+		player:teleportTo(town:getTemplePosition())
+		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+		player:sendTextMessage(MESSAGE_STATUS_CONSOLE_BLUE, "Sua Premium Account acabou!")
 	end
-
-	if REWARD_CHEST.LOOT[player:getGuid()]['name'] ~= player:getName() then
-		REWARD_CHEST.LOOT[player:getGuid()]['name'] = player:getName()
-	end
-
-	if REWARD_CHEST.LOOT[player:getGuid()]['guid'] ~= player:getGuid() then
-		REWARD_CHEST.LOOT[player:getGuid()]['guid'] = player:getGuid()
-	end
-
-	REWARD_CHEST.LOOT[player:getGuid()]['killingDamage'] = 0
-	REWARD_CHEST.LOOT[player:getGuid()]['healingDamage'] = 0
-	REWARD_CHEST.LOOT[player:getGuid()]['blockingDamage'] = 0
-
-	player:sendOfflineLoot()
-
-	--[[Promotion
-	local vocation = player:getVocation()
-	local promotion = vocation:getPromotion()
-	local value = player:getStorageValue(Storage.Promotion)
-	if player:isPremium() then
-		local value = player:getStorageValue(Storage.Promotion)
-		if not promotion and value ~= 1 then
-			player:setStorageValue(Storage.Promotion, 1)
-		elseif value == 1 then
-			player:setVocation(promotion)
-		end
-	elseif not promotion then
-		player:setVocation(vocation:getDemotion())
-	end]]
 
 	-- Events
 	for i = 1, #events do

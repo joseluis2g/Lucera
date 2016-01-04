@@ -3,6 +3,5 @@ function onLogout(player)
 	if nextUseStaminaTime[playerId] ~= nil then
 		nextUseStaminaTime[playerId] = nil
 	end
-	--moveCorpseItemsToRewardChest(player, false)
 	return true
 end

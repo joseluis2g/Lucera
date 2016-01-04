@@ -696,9 +696,14 @@ if Modules == nil then
 				i = i + 1
 			end
 
+			local it = ItemType(itemid)
+			if subType == nil and it:getCharges() ~= 0 then
+				subType = it:getCharges()
+			end
+
 			if SHOPMODULE_MODE == SHOPMODULE_MODE_TRADE then
 				if itemid ~= nil and cost ~= nil then
-					if subType == nil and ItemType(itemid):isFluidContainer() then
+					if subType == nil and it:isFluidContainer() then
 						print("[Warning : " .. Npc():getName() .. "] NpcSystem:", "SubType missing for parameter item:", item)
 					else
 						self:addBuyableItem(nil, itemid, cost, subType, realName)
@@ -708,7 +713,7 @@ if Modules == nil then
 				end
 			else
 				if name ~= nil and itemid ~= nil and cost ~= nil then
-					if subType == nil and ItemType(itemid):isFluidContainer() then
+					if subType == nil and it:isFluidContainer() then
 						print("[Warning : " .. Npc():getName() .. "] NpcSystem:", "SubType missing for parameter item:", item)
 					else
 						local names = {}

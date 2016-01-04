@@ -50,12 +50,6 @@ function Creature:onTargetCombat(target)
 		end
 	end
 
-	if self:isPlayer() and target:isMonster() then
-		if isInArray(REWARD_CHEST.BOSSES, target:getName():lower()) then
-			target:registerEvent("rewarder_comp")
-		end
-	end
-
 	if target:isPlayer() then
 		if self:isMonster() then
 			local protectionStorage = target:getStorageValue(Storage.combatProtectionStorage)

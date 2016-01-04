@@ -348,7 +348,14 @@
 	<monster name="Ice Golem" file="cryo-elementals/ice golem.xml" />
 
 	<!-- Customs -->
+	<monster name="Gloom Wolf" file="customs/gloom wolf.xml" />
+	<monster name="Renegade Knight" file="customs/renegade knight.xml" />
 	<monster name="Trailemaw" file="customs/trailemaw.xml" />
+	<monster name="Vicious Squire" file="customs/vicious squire.xml" />
+	<monster name="Vile Grandmaster" file="customs/vile grandmaster.xml" />
+	<monster name="Werebadger" file="customs/werebadger.xml" />
+	<monster name="Werebear" file="customs/werebear.xml" />
+	<monster name="Wereboar" file="customs/wereboar.xml" />
 
 	<!-- Dawnport -->
 	<monster name="Brittle Skeleton" file="dawnport/brittle skeleton.xml" />

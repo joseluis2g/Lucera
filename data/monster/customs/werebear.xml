@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<monster name="Werebear" nameDescription="a werebear" race="blood" experience="2100" speed="150" manacost="0">
+	<health now="2400" max="2400" />
+	<look type="720" corpse="24666" />
+	<targetchange interval="4000" chance="10" />
+	<strategy attack="100" defense="0" />
+	<flags>
+		<flag summonable="0" />
+		<flag attackable="1" />
+		<flag hostile="1" />
+		<flag illusionable="0" />
+		<flag convinceable="0" />
+		<flag pushable="0" />
+		<flag canpushitems="1" />
+		<flag canpushcreatures="1" />
+		<flag targetdistance="1" />
+		<flag staticattack="70" />
+		<flag runonhealth="400" />
+	</flags>
+	<attacks>
+		<attack name="melee" interval="2000" skill="0" attack="400" />
+	</attacks>
+	<defenses armor="45" defense="45">
+		<defense name="speed" interval="2000" chance="15" speedchange="300" duration="5000">
+			<attribute key="areaEffect" value="redshimmer" />
+		</defense>
+	</defenses>
+	<elements>
+		<element holyPercent="-5" />
+		<element firePercent="-5" />
+		<element physicalPercent="1" />
+		<element deathPercent="1" />
+		<element energyPercent="5" />
+		<element icePercent="10" />
+		<element earthPercent="30" />
+	</elements>
+	<immunities>
+		<immunity paralyze="1" />
+		<immunity invisible="1" />
+	</immunities>
+	<voices interval="2000" chance="7">
+		<voice sentence="GROOOWL" />
+		<voice sentence="GRRR" />
+	</voices>
+	<loot>
+		<item id="2152" countmax="3" chance="100000" /><!-- platinum coin -->
+		<item id="2148" countmax="75" chance="80020" /><!-- gold coin -->
+		<item id="24712" chance="15990" /><!-- werebear skull -->
+		<item id="24713" chance="15180" /><!-- werebear fur -->
+		<item id="2671" chance="11990" /><!-- ham -->
+		<item id="7591" chance="4430" /><!-- great health potion -->
+		<item id="5896" chance="2790" /><!-- bear paw -->
+		<item id="5896" chance="250" /><!-- honeycomb -->
+		<item id="8473" chance="2230" /><!-- ultimate health potion -->
+		<item id="24716" chance="1080" /><!-- werewolf amulet -->
+		<item id="2197" chance="1000" /><!-- stone skin amulet -->
+		<item id="7432" chance="950" /><!-- furry club -->
+		<item id="7439" chance="820" /><!-- berserk potion -->
+		<item id="2169" chance="650" /><!-- time ring -->
+		<item id="7452" chance="610" /><!-- spiked squelcher -->
+		<item id="7383" chance="550" /><!-- relic sword -->
+		<item id="24741" chance="520" /><!-- fur armor -->
+		<!--<item id="24739" chance="390" /> moonlight crystals -->
+		<item id="24759" chance="210" /><!-- werebear trophy -->
+		<item id="7419" chance="130" /><!-- dreaded cleaver -->
+	</loot>
+</monster>

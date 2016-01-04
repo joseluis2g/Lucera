@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <globalevents>
 	<!-- Events -->
-	<globalevent type="startup" name="NoBugBattle" script="battlefield/battlefieldstart.lua" />
-	<globalevent interval="55000" name="BattleField" script="battlefield/battlefieldthink.lua" />
+	<globalevent interval="55000" name="BattleField" script="battlefieldthink.lua" />
 	<globalevent interval="55000" name="firestorm_event" script="firestorm/event.lua" />
 	<globalevent type="startup" name="NoBugFire" script="firestorm/firestormstart.lua" />
 
@@ -25,7 +24,7 @@
 	<!-- Others -->
 	<globalevent type="startup" name="ServerStartup" script="startup.lua" />
 	<globalevent type="record" name="PlayerRecord" script="record.lua" />
-	<globalevent name="ServerSave" time="05:00:00" script="serversave.lua" />
+	<!--<globalevent name="ServerSave" time="05:00:00" script="serversave.lua" />-->
 	<globalevent interval="1800000" name="Advertise" script="advertise.lua" />
 
 	<!-- Spawn -->

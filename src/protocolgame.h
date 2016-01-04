@@ -275,6 +275,8 @@ class ProtocolGame final : public ProtocolGameBase
 		void sendIcons(uint16_t icons);
 		void sendFYIBox(const std::string& message);
 
+		void sendUnjustifiedPoints(const uint8_t& dayProgress, const uint8_t& dayLeft, const uint8_t& weekProgress, const uint8_t& weekLeft, const uint8_t& monthProgress, const uint8_t& monthLeft, const uint8_t& skullDuration);
+
 		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type);
 		void sendCreatureHealth(const Creature* creature);
 		void sendCreatureTurn(const Creature* creature, uint32_t stackpos);
@@ -289,6 +291,8 @@ class ProtocolGame final : public ProtocolGameBase
 		void sendCreatureOutfit(const Creature* creature, const Outfit_t& outfit);
 		void sendTextMessage(const TextMessage& message);
 		void sendReLoginWindow(uint8_t unfairFightReduction);
+
+		void sendBlessings(uint8_t blessings);
 
 		void sendTutorial(uint8_t tutorialId);
 		void sendAddMarker(const Position& pos, uint8_t markType, const std::string& desc);

@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<npc name="Shadowpunch" script="Shadowpunch.lua" walkinterval="2000" floorchange="0">
+  <health now="100" max="100" />
+  <look type="152" head="90" body="110" legs="111" feet="110" addons="3" />
+  <voices>
+    <voice text="Rainin' blood!" interval2="0" margin="1" yell="no" />
+    <voice text="Show your heart of steel!" interval2="0" margin="1" yell="no" />
+    <voice text="In victory or death!" interval2="0" margin="1" yell="no" />
+    <voice text="In that case, all selections made have been canceled. You can initialise a new fight any time you like. Please make sure that the initialisation process is not interrupted." interval2="120" margin="1" yell="no" />
+  </voices>
+</npc>

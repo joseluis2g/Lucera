@@ -1139,6 +1139,14 @@ void ProtocolGame::sendCreatureSquare(const Creature* creature, SquareColor_t co
 	writeToOutputBuffer(msg);
 }
 
+void ProtocolGame::sendBlessings(uint8_t blessings)
+{
+	NetworkMessage msg;
+	msg.addByte(0x9C);
+	msg.add<uint16_t>(blessings & BLESSING_ADVENTURER);
+	writeToOutputBuffer(msg);
+}
+
 void ProtocolGame::sendTutorial(uint8_t tutorialId)
 {
 	NetworkMessage msg;
@@ -1162,10 +1170,7 @@ void ProtocolGame::sendReLoginWindow(uint8_t unfairFightReduction)
 	NetworkMessage msg;
 	msg.addByte(0x28);
 	msg.addByte(0x00);
-	if (!g_config.getBoolean(ConfigManager::OLD_PVP_SYSTEM))
-		msg.addByte(unfairFightReduction);
-	else
-		msg.addByte(0);
+	msg.addByte(unfairFightReduction);
 	writeToOutputBuffer(msg);
 }
 
@@ -2030,6 +2035,20 @@ void ProtocolGame::sendFYIBox(const std::string& message)
 	writeToOutputBuffer(msg);
 }
 
+void ProtocolGame::sendUnjustifiedPoints(const uint8_t& dayProgress, const uint8_t& dayLeft, const uint8_t& weekProgress, const uint8_t& weekLeft, const uint8_t& monthProgress, const uint8_t& monthLeft, const uint8_t& skullDuration)
+{
+	NetworkMessage msg;
+	msg.addByte(0xB7);
+	msg.addByte(dayProgress);
+	msg.addByte(dayLeft);
+	msg.addByte(weekProgress);
+	msg.addByte(weekLeft);
+	msg.addByte(monthProgress);
+	msg.addByte(monthLeft);
+	msg.addByte(skullDuration);
+	writeToOutputBuffer(msg);
+}
+
 //tile
 void ProtocolGame::sendAddTileItem(const Position& pos, uint32_t stackpos, const Item* item)
 {
@@ -2270,7 +2289,7 @@ void ProtocolGame::sendOutfitWindow()
 			outfit.lookType,
 			addons
 		);
-		if (protocolOutfits.size() == 50) { // Game client doesn't allow more than 50 outfits
+		if (protocolOutfits.size() == 100) { // Game client doesn't allow more than 100 outfits
 			break;
 		}
 	}

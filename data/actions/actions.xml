@@ -21,7 +21,16 @@
 	<action itemid="5461" script="other/teste.lua" />
 	<action itemid="8982" script="other/modalAD.lua" />
 	<action itemid="13030" script="other/mountDoll.lua" />
-	
+	<action actionid="2050" script="other/cormaya_water.lua" />
+	<action actionid="2051" script="other/cormaya_water.lua" />
+
+	<!-- Battlefield -->
+	<action fromaid="52960" toaid="52961" script="other/battlefield.lua"/>
+
+	<!-- Roshamuul -->
+	<action itemid="22513" script="roshamuul/bone.lua" />
+	<action itemid="22598" script="roshamuul/unrealized_dream.lua" />
+
 	<!-- Oramond -->
 	<action fromaid="50000" toaid="50001" script="oramond/lever.lua" />
 	<action fromid="23475" toid="23478" script="oramond/totakeroots.lua" />

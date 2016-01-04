@@ -313,16 +313,6 @@ ReturnValue Actions::internalUseItem(Player* player, const Position& pos, uint8_
 			myDepotLocker->setParent(depot->getParent()->getTile());
 			openContainer = myDepotLocker;
 			player->setLastDepotId(depot->getDepotId());
-		} else if (item->getID() == ITEM_REWARD_CHEST_MAIN) {
-			DepotLocker* myRewardChest = player->getMainRewardChest();
-			myRewardChest->setParent(item->getTile());
-			openContainer = myRewardChest;
-			player->setLastDepotId(REWARD_CHEST_DEPOT);
-		} else if (item->getActionId() == ITEM_REWARD_CHEST_AID) {
-			DepotLocker* myRewardChest = player->getRewardCorpse();
-			myRewardChest->setParent(item->getTile());
-			openContainer = myRewardChest;
-			player->setLastDepotId(REWARD_CHEST_DEPOT);
 		} else {
 			openContainer = container;
 		}

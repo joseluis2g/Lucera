@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <movements>
-	<!-- Treiners-->
+	<!-- Dawnport -->
+	<movevent event="StepIn" fromaid="2001" toaid="2004" script="vocationtrial.lua" />
+	<movevent event="StepIn" fromaid="2010" toaid="2020" script="dawnteleports.lua" />
+
+	<!-- Custom Teleports -->
+	<movevent event="StepIn" fromuid="5000" touid="5004" script="customteleports.lua" />
+	<movevent event="StepIn" fromuid="5010" touid="5013" script="customteleports.lua" />
+	<movevent event="StepIn" fromuid="5005" touid="5009" script="customteleports_out.lua" />
+	<movevent event="StepIn" fromuid="5014" touid="5017" script="customteleports_out.lua" />
+	<movevent event="StepIn" fromaid="2150" toaid="2180" script="onwater.lua" />
+
+	<!-- Treiners -->
 	<movevent event="StepIn" actionid="51993" script="train.lua" />
 	<movevent event="StepOut" actionid="51993" script="train.lua" />
 

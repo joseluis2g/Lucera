@@ -1,10 +1,10 @@
 local blessings = {
-	{id = 5, name = 'Wisdom of Solitude'},
-	{id = 4, name = 'Spark of the Phoenix'},
-	{id = 3, name = 'Fire of the Suns'},
-	{id = 1, name = 'Spiritual Shielding'},
-	{id = 2, name = 'Embrace of Tibia'},
-	--{id = 6, name = 'Twist of Fate'}
+	{id = BLESSING_WISDOM_OF_SOLITUDE, name = 'Wisdom of Solitude'},
+	{id = BLESSING_SPARK_OF_PHOENIX, name = 'Spark of the Phoenix'},
+	{id = BLESSING_FIRE_OF_SUNS, name = 'Fire of the Suns'},
+	{id = BLESSING_SPIRITUAL_SHIELDING, name = 'Spiritual Shielding'},
+	{id = BLESSING_EMBRACE_OF_TIBIA, name = 'Embrace of Tibia'},
+	{id = BLESSING_TWIST_OF_FATE, name = 'Twist of Fate'}
 }
 
 function onUse(player, item, fromPosition, target, toPosition, isHotkey)

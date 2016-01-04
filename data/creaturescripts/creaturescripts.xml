@@ -4,9 +4,6 @@
 	<event type="modalwindow" name="modalAD" script="custom/modalAD.lua"/>
 	<event type="modalwindow" name="mountDoll" script="custom/mountDoll.lua"/>
 	<event type="prepareDeath" name="fire_event" script="custom/fire_event.lua"/>
-	<event type="kill" name="RewardChest" script="custom/reward_chest.lua"/>
-	<event type="healthchange" name="healthchange" script="custom/reward_chest.lua"/>
-	<event type="healthchange" name="rewarder_comp" script="custom/reward_chest.lua"/>
 
 	<!-- BattleField Event -->
 	<event type="login" name="battleflogin" script="others/battlefield.lua"/>
@@ -65,13 +62,11 @@
 
 	<!-- Others -->
 	<event type="login" name="PlayerLogin" script="others/login.lua" />
-	<event type="login" name="FirstItems" script="others/firstitems.lua" />
+	<!--<event type="login" name="FirstItems" script="others/firstitems.lua" />-->
 	<event type="login" name="RegenerateStamina" script="others/regeneratestamina.lua" />
 	<event type="login" name="OfflineTraining" script="others/offlinetraining.lua" />
 	<event type="login" name="Quests" script="others/quests.lua" />
-
 	<event type="logout" name="PlayerLogout" script="others/logout.lua" />
-
 	<event type="death" name="PlayerDeath" script="others/playerdeath.lua" />
 	<event type="death" name="DropLoot" script="others/droploot.lua" />
 	<event type="advance" name="AdvanceSave" script="others/advance_save.lua" />

@@ -29959,6 +29959,12 @@
 		<attribute key="corpseType" value="blood" />
 		<attribute key="fluidSource" value="blood" />
 	</item>
+	<item id="22513" article="a" name="large pile of various bones">
+		<attribute key="description" value="Several large and curved bones are protruding from this pile." />
+	</item>
+	<item id="22514" article="a" name="large pile of various bones">
+		<attribute key="description" value="Several large and curved bones are protruding from this pile." />
+	</item>
 	<item id="22516" article="a" name="ring of ending">
 		<attribute key="description" value="This constantly rotating ring is perfectly weightless, yet feels infinitely heavy at the same time." />
 		<attribute key="slotType" value="ring" />

@@ -943,6 +943,13 @@ Storage = {
 		Reward = 9050
 	},
 
+	Dawnport = {
+		TileKnight = 52503,
+		TilePaladin = 52504,
+		TileDruid = 52505,
+		TileSorcerer = 52506
+	},
+
 	EruaranGreeting = 3250,
 	Factions = 50716,
 	MaryzaCookbook = 50721,
@@ -999,12 +1006,6 @@ GlobalStorage = {
 		ThalasSwitchesGlobalStorage = 200,
 		DiprathSwitchesGlobalStorage = 201,
 		AshmunrahSwitchesGlobalStorage = 202
-	},
-	Dawnport = {
-		TileKnight = 52503,
-		TilePaladin = 52504,
-		TileDruid = 52505,
-		TileSorcerer = 52506
 	},
 	NaginataStone = 50058,
 	SwordOfFury = 5635
