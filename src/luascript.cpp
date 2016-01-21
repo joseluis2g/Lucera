@@ -35,6 +35,8 @@
 #include "monster.h"
 #include "scheduler.h"
 #include "databasetasks.h"
+#include "scriptmanager.h"
+#include "store.h"
 
 extern Chat* g_chat;
 extern Game g_game;
@@ -42,6 +44,7 @@ extern Monsters g_monsters;
 extern ConfigManager g_config;
 extern Vocations g_vocations;
 extern Spells* g_spells;
+extern Store* g_store;
 
 enum {
 	EVENT_ID_LOADING = 1,
@@ -1038,6 +1041,12 @@ void LuaScriptInterface::registerFunctions()
 	//registerEnumIn(tableName, value)
 
 	// Enums
+	registerEnum(STORE_ERROR_PURCHASE)
+	registerEnum(STORE_ERROR_NETWORK)
+	registerEnum(STORE_ERROR_HISTORY)
+	registerEnum(STORE_ERROR_TRANSFER)
+	registerEnum(STORE_ERROR_INFORMATION)
+
 	registerEnum(ACCOUNT_TYPE_NORMAL)
 	registerEnum(ACCOUNT_TYPE_TUTOR)
 	registerEnum(ACCOUNT_TYPE_SENIORTUTOR)
@@ -2246,6 +2255,8 @@ void LuaScriptInterface::registerFunctions()
 	registerMethod("Player", "getContainerById", LuaScriptInterface::luaPlayerGetContainerById);
 	registerMethod("Player", "getContainerIndex", LuaScriptInterface::luaPlayerGetContainerIndex);
 
+	registerMethod("Player", "sendStoreError", LuaScriptInterface::luaPlayerSendStoreError);
+
 	registerMethod("Player", "startLiveCast", LuaScriptInterface::luaPlayerStartLiveCast);
 	registerMethod("Player", "stopLiveCast", LuaScriptInterface::luaPlayerStopLiveCast);
 	registerMethod("Player", "isLiveCaster", LuaScriptInterface::luaPlayerIsLiveCaster);
@@ -2545,6 +2556,13 @@ void LuaScriptInterface::registerFunctions()
 	registerMethod("Party", "isSharedExperienceEnabled", LuaScriptInterface::luaPartyIsSharedExperienceEnabled);
 	registerMethod("Party", "shareExperience", LuaScriptInterface::luaPartyShareExperience);
 	registerMethod("Party", "setSharedExperience", LuaScriptInterface::luaPartySetSharedExperience);
+
+	// StoreOffer
+	registerClass("StoreOffer", "", LuaScriptInterface::luaStoreOfferCreate);
+	registerMetaMethod("StoreOffer", "__eq", LuaScriptInterface::luaUserdataCompare);
+
+	registerMethod("StoreOffer", "getId", LuaScriptInterface::luaStoreOfferGetId);
+	registerMethod("StoreOffer", "getName", LuaScriptInterface::luaStoreOfferGetName);
 }
 
 #undef registerEnum
@@ -7638,11 +7656,13 @@ int LuaScriptInterface::luaPlayerGetKills(lua_State* L)
 	lua_createtable(L, player->unjustifiedKills.size(), 0);
 	int idx = 0;
 	for (const auto& kill : player->unjustifiedKills) {
-		lua_createtable(L, 2, 0);
-		pushString(L, kill.first);
+		lua_createtable(L, 3, 0);
+		lua_pushnumber(L, kill.target);
 		lua_rawseti(L, -2, 1);
-		lua_pushnumber(L, kill.second);
+		lua_pushnumber(L, kill.time);
 		lua_rawseti(L, -2, 2);
+		pushBoolean(L, kill.unavenged);
+		lua_rawseti(L, -2, 3);
 		lua_rawseti(L, -2, ++idx);
 	}
 
@@ -7659,7 +7679,7 @@ int LuaScriptInterface::luaPlayerSetKills(lua_State* L)
 	}
 
 	luaL_checktype(L, 2, LUA_TTABLE);
-	std::vector<std::pair<std::string, time_t>> newKills;
+	std::vector<Kill> newKills;
 
 	lua_pushnil(L);
 	while (lua_next(L, 2) != 0) {
@@ -7667,10 +7687,9 @@ int LuaScriptInterface::luaPlayerSetKills(lua_State* L)
 		luaL_checktype(L, -1, LUA_TTABLE);
 		lua_rawgeti(L, -1, 1); // push target
 		lua_rawgeti(L, -2, 2); // push time
-		std::string target(luaL_checkstring(L, -2));
-		time_t time = luaL_checknumber(L, -1);
-		newKills.push_back(std::pair<std::string, time_t>(target, time));
-		lua_pop(L, 3);
+		lua_rawgeti(L, -3, 3); // push unavenged
+		newKills.emplace_back(luaL_checknumber(L, -3), luaL_checknumber(L, -2), getBoolean(L, -1));
+		lua_pop(L, 4);
 	}
 
 	player->unjustifiedKills = std::move(newKills);
@@ -8942,10 +8961,20 @@ int LuaScriptInterface::luaPlayerSendOutfitWindow(lua_State* L)
 
 int LuaScriptInterface::luaPlayerAddMount(lua_State* L)
 {
-	// player:addMount(mountId)
+	// player:addMount(mountId or mountName)
 	Player* player = getUserdata<Player>(L, 1);
 	if (player) {
-		uint8_t mountId = getNumber<uint8_t>(L, 2);
+		uint8_t mountId;
+		if (isString(L, 2)) {
+			Mount* mount = g_game.mounts.getMountByName(getString(L, 2));
+			if (!mount) {
+				lua_pushnil(L);
+				return 1;
+			}
+			mountId = mount->id;
+		} else {
+			mountId = getNumber<uint8_t>(L, 2);
+		}
 		pushBoolean(L, player->tameMount(mountId));
 	} else {
 		lua_pushnil(L);
@@ -8955,10 +8984,20 @@ int LuaScriptInterface::luaPlayerAddMount(lua_State* L)
 
 int LuaScriptInterface::luaPlayerRemoveMount(lua_State* L)
 {
-	// player:removeMount(mountId)
+	// player:removeMount(mountId or mountName)
 	Player* player = getUserdata<Player>(L, 1);
 	if (player) {
-		uint8_t mountId = getNumber<uint8_t>(L, 2);
+		uint8_t mountId;
+		if (isString(L, 2)) {
+			Mount* mount = g_game.mounts.getMountByName(getString(L, 2));
+			if (!mount) {
+				lua_pushnil(L);
+				return 1;
+			}
+			mountId = mount->id;
+		} else {
+			mountId = getNumber<uint8_t>(L, 2);
+		}
 		pushBoolean(L, player->untameMount(mountId));
 	} else {
 		lua_pushnil(L);
@@ -8968,15 +9007,20 @@ int LuaScriptInterface::luaPlayerRemoveMount(lua_State* L)
 
 int LuaScriptInterface::luaPlayerHasMount(lua_State* L)
 {
-	// player:hasMount(mountId)
+	// player:hasMount(mountId or mountName)
 	const Player* player = getUserdata<const Player>(L, 1);
 	if (!player) {
 		lua_pushnil(L);
 		return 1;
 	}
 
-	uint8_t mountId = getNumber<uint8_t>(L, 2);
-	Mount* mount = g_game.mounts.getMountByID(mountId);
+	Mount* mount = nullptr;
+	if (isString(L, 2)) {
+		mount = g_game.mounts.getMountByName(getString(L, 2));
+	} else {
+		mount = g_game.mounts.getMountByID(getNumber<uint8_t>(L, 2));
+	}
+
 	if (mount) {
 		pushBoolean(L, player->hasMount(mount));
 	} else {
@@ -9370,6 +9414,23 @@ int LuaScriptInterface::luaPlayerGetContainerIndex(lua_State* L)
 	} else {
 		lua_pushnil(L);
 	}
+	return 1;
+}
+
+int LuaScriptInterface::luaPlayerSendStoreError(lua_State* L)
+{
+	// player::sendStoreError(errorType, message)
+	Player* player = getUserdata<Player>(L, 1);
+	if (player) {
+		StoreError_t errorType = static_cast<StoreError_t>(getNumber<uint8_t>(L, 2));
+		if (isString(L, 3)) {
+			player->sendStoreError(errorType, getString(L, 3));
+			pushBoolean(L, true);
+			return 1;
+		}
+	}
+
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -11066,14 +11127,21 @@ int LuaScriptInterface::luaCombatCreate(lua_State* L)
 int LuaScriptInterface::luaCombatSetParameter(lua_State* L)
 {
 	// combat:setParameter(key, value)
-	uint32_t value = getNumber<uint32_t>(L, 3);
-	CombatParam_t key = getNumber<CombatParam_t>(L, 2);
 	Combat* combat = getUserdata<Combat>(L, 1);
-	if (combat) {
-		pushBoolean(L, combat->setParam(key, value));
-	} else {
+	if (!combat) {
 		lua_pushnil(L);
+		return 1;
 	}
+
+	CombatParam_t key = getNumber<CombatParam_t>(L, 2);
+	uint32_t value;
+	if (isBoolean(L, 3)) {
+		value = getBoolean(L, 3) ? 1 : 0;
+	} else {
+		value = getNumber<uint32_t>(L, 3);
+	}
+	combat->setParam(key, value);
+	pushBoolean(L, true);
 	return 1;
 }
 
@@ -12229,6 +12297,45 @@ int LuaScriptInterface::luaPartySetSharedExperience(lua_State* L)
 	Party* party = getUserdata<Party>(L, 1);
 	if (party) {
 		pushBoolean(L, party->setSharedExperience(party->getLeader(), active));
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaStoreOfferCreate(lua_State* L)
+{
+	// StoreOffer(id)
+	if (isNumber(L, 2)) {
+		auto offer = g_store->getOfferById(getNumber<uint32_t>(L, 2));
+		if (offer) {
+			pushUserdata<StoreOffer>(L, &(*offer));
+			setMetatable(L, -1, "StoreOffer");
+			return 1;
+		}
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+int LuaScriptInterface::luaStoreOfferGetId(lua_State* L)
+{
+	StoreOffer* offer = getUserdata<StoreOffer>(L, 1);
+	if (offer) {
+		lua_pushnumber(L, offer->id);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaStoreOfferGetName(lua_State* L)
+{
+	// storeOffer:getName()
+	StoreOffer* offer = getUserdata<StoreOffer>(L, 1);
+	if (offer) {
+		pushString(L, offer->name);
 	} else {
 		lua_pushnil(L);
 	}

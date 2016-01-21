@@ -358,7 +358,7 @@ class LuaScriptInterface
 		// Is
 		inline static bool isNumber(lua_State* L, int32_t arg)
 		{
-			return lua_isnumber(L, arg) != 0;
+			return lua_type(L, arg) == LUA_TNUMBER;
 		}
 		inline static bool isString(lua_State* L, int32_t arg)
 		{
@@ -976,6 +976,8 @@ class LuaScriptInterface
 		static int luaPlayerGetContainerById(lua_State* L);
 		static int luaPlayerGetContainerIndex(lua_State* L);
 
+		static int luaPlayerSendStoreError(lua_State* L);
+
 		static int32_t luaPlayerStartLiveCast(lua_State* L);
 		static int32_t luaPlayerStopLiveCast(lua_State* L);
 		static int32_t luaPlayerIsLiveCaster(lua_State* L);
@@ -1259,6 +1261,12 @@ class LuaScriptInterface
 		static int luaPartyIsSharedExperienceEnabled(lua_State* L);
 		static int luaPartyShareExperience(lua_State* L);
 		static int luaPartySetSharedExperience(lua_State* L);
+
+		// StoreOffer
+		static int luaStoreOfferCreate(lua_State* L);
+
+		static int luaStoreOfferGetName(lua_State* L);
+		static int luaStoreOfferGetId(lua_State* L);
 
 		//
 		lua_State* m_luaState;

@@ -31,7 +31,6 @@
 #include "iologindata.h"
 #include "monster.h"
 #include "movement.h"
-#include "outputmessage.h"
 #include "scheduler.h"
 #include "weapons.h"
 
@@ -1471,6 +1470,21 @@ void Player::onSendContainer(const Container* container)
 	}
 }
 
+//store
+void Player::sendStoreError(StoreError_t errorType, const std::string& message)
+{
+	if (client) {
+		client->sendStoreError(errorType, message);
+	}
+}
+
+void Player::sendStorePurchaseCompleted(const std::string& message)
+{
+	if (client) {
+		client->sendStorePurchaseCompleted(message);
+	}
+}
+
 //inventory
 void Player::onUpdateInventoryItem(Item* oldItem, Item* newItem)
 {
@@ -1769,11 +1783,11 @@ void Player::addExperience(Creature* source, uint64_t exp, bool sendText/* = fal
 	uint32_t prevLevel = level;
 	while (experience >= nextLevelExp) {
 		++level;
-		healthMax += vocation->getHPGain();
-		health += vocation->getHPGain();
-		manaMax += vocation->getManaGain();
-		mana += vocation->getManaGain();
-		capacity += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 10 : vocation->getCapGain();
+		healthMax += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 5 : vocation->getHPGain();
+		health += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 5 : vocation->getHPGain();
+		manaMax += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 5 : vocation->getManaGain();
+		mana += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 5 : vocation->getManaGain();
+		capacity += (strcmp(getTown()->getName().c_str(), "Dawnport") == 0) ? 1000 : vocation->getCapGain();
 
 		currLevelExp = nextLevelExp;
 		nextLevelExp = Player::getExpForLevel(level + 1);
@@ -3593,7 +3607,7 @@ void Player::onAttackedCreature(Creature* target)
 			if (!Combat::isInPvpZone(this, targetPlayer) && !isInWar(targetPlayer)) {
 				addAttacked(targetPlayer);
 
-				if (targetPlayer->getSkull() == SKULL_NONE && getSkull() == SKULL_NONE) {
+				if (targetPlayer->getSkull() == SKULL_NONE && getSkull() == SKULL_NONE && !targetPlayer->hasKilled(this)) {
 					setSkull(SKULL_WHITE);
 
 					if (hasBlessing(BLESSING_ADVENTURER)) {
@@ -3689,7 +3703,16 @@ bool Player::onKilledCreature(Creature* target, bool lastHit/* = true*/)
 			targetPlayer->setLossSkill(false);
 		} else if (!hasFlag(PlayerFlag_NotGainInFight) && !isPartner(targetPlayer)) {
 			if (!Combat::isInPvpZone(this, targetPlayer) && hasAttacked(targetPlayer) && !targetPlayer->hasAttacked(this) && !isGuildMate(targetPlayer) && targetPlayer != this) {
-				if (targetPlayer->getSkull() == SKULL_NONE && !isInWar(targetPlayer)) {
+				if (targetPlayer->hasKilled(this)) {
+					for (auto& kill : targetPlayer->unjustifiedKills) {
+						if (kill.target == getGUID() && kill.unavenged) {
+							kill.unavenged = false;
+							auto it = attackedSet.find(targetPlayer->guid);
+							attackedSet.erase(it);
+							break;
+						}
+					}
+				} else if (targetPlayer->getSkull() == SKULL_NONE && !isInWar(targetPlayer)) {
 					unjustified = true;
 					addUnjustifiedDead(targetPlayer);
 				}
@@ -3920,12 +3943,24 @@ Skulls_t Player::getSkullClient(const Creature* creature) const
 
 	const Player* player = creature->getPlayer();
 	if (player && player->getSkull() == SKULL_NONE) {
+		if (player == this) {
+			for (const auto& kill : unjustifiedKills) {
+				if (kill.unavenged && (time(nullptr) - kill.time) < g_config.getNumber(ConfigManager::ORANGE_SKULL_DURATION) * 24 * 60 * 60) {
+					return SKULL_ORANGE;
+				}
+			}
+		}
+
 		if (isInWar(player)) {
 			return SKULL_GREEN;
 		}
 
 		if (!player->getGuildWarList().empty() && guild == player->getGuild()) {
 			return SKULL_GREEN;
+		}
+
+		if (player->hasKilled(this)) {
+			return SKULL_ORANGE;
 		}
 
 		if (player->hasAttacked(this)) {
@@ -3937,6 +3972,16 @@ Skulls_t Player::getSkullClient(const Creature* creature) const
 		}
 	}
 	return Creature::getSkullClient(creature);
+}
+
+bool Player::hasKilled(const Player* player) const {
+	for (const auto& kill : unjustifiedKills) {
+		if (kill.target == player->getGUID() && (time(nullptr) - kill.time) < g_config.getNumber(ConfigManager::ORANGE_SKULL_DURATION) * 24 * 60 * 60 && kill.unavenged) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool Player::hasAttacked(const Player* attacked) const
@@ -3970,14 +4015,14 @@ void Player::addUnjustifiedDead(const Player* attacked)
 
 	sendTextMessage(MESSAGE_EVENT_ADVANCE, "Warning! The murder of " + attacked->getName() + " was not justified.");
 
-	unjustifiedKills.push_back(std::pair<std::string, time_t>(attacked->getName(), time(nullptr)));
+	unjustifiedKills.emplace_back(attacked->getGUID(), time(nullptr), true);
 
 	uint8_t dayKills = 0;
 	uint8_t weekKills = 0;
 	uint8_t monthKills = 0;
 
-	for (const auto& it : unjustifiedKills) {
-		const auto diff = time(nullptr) - it.second;
+	for (const auto& kill : unjustifiedKills) {
+		const auto diff = time(nullptr) - kill.time;
 		if (diff <= 24 * 60 * 60) {
 			dayKills += 1;
 		}
@@ -3993,11 +4038,11 @@ void Player::addUnjustifiedDead(const Player* attacked)
 		if (dayKills >= 2 * g_config.getNumber(ConfigManager::DAY_KILLS_TO_RED) || weekKills >= 2 * g_config.getNumber(ConfigManager::WEEK_KILLS_TO_RED) || monthKills >= 2 * g_config.getNumber(ConfigManager::MONTH_KILLS_TO_RED)) {
 			setSkull(SKULL_BLACK);
 			//start black skull time
-			skullTicks = 45LL * 24 * 60 * 60 * 1000;
+			skullTicks = static_cast<int64_t>(g_config.getNumber(ConfigManager::BLACK_SKULL_DURATION)) * 24 * 60 * 60 * 1000;
 		} else if (dayKills >= g_config.getNumber(ConfigManager::DAY_KILLS_TO_RED) || weekKills >= g_config.getNumber(ConfigManager::WEEK_KILLS_TO_RED) || monthKills >= g_config.getNumber(ConfigManager::MONTH_KILLS_TO_RED)) {
 			setSkull(SKULL_RED);
 			//reset red skull time
-			skullTicks = 30LL * 24 * 60 * 60 * 1000;
+			skullTicks = static_cast<int64_t>(g_config.getNumber(ConfigManager::RED_SKULL_DURATION)) * 24 * 60 * 60 * 1000;
 		}
 	}
 
@@ -4263,8 +4308,8 @@ void Player::sendUnjustifiedPoints()
 		double weekKills = 0;
 		double monthKills = 0;
 
-		for (const auto& it : unjustifiedKills) {
-			const auto diff = time(nullptr) - it.second;
+		for (const auto& kill : unjustifiedKills) {
+			const auto diff = time(nullptr) - kill.time;
 			if (diff <= 24 * 60 * 60) {
 				dayKills += 1;
 			}

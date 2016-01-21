@@ -26,31 +26,19 @@
 #include "creature.h"
 #include "monster.h"
 #include "game.h"
-#include "tile.h"
-#include "house.h"
 #include "actions.h"
-#include "combat.h"
 #include "iologindata.h"
 #include "iomarket.h"
-#include "chat.h"
 #include "talkaction.h"
 #include "spells.h"
 #include "configmanager.h"
-#include "ban.h"
-#include "raids.h"
-#include "database.h"
 #include "server.h"
-#include "ioguild.h"
-#include "quests.h"
 #include "globalevent.h"
-#include "mounts.h"
 #include "bed.h"
 #include "scheduler.h"
-#include "monster.h"
-#include "spawn.h"
-#include "connection.h"
 #include "events.h"
 #include "databasetasks.h"
+#include "store.h"
 
 extern ConfigManager g_config;
 extern Actions* g_actions;
@@ -60,6 +48,7 @@ extern Spells* g_spells;
 extern Vocations g_vocations;
 extern GlobalEvents* g_globalEvents;
 extern Events* g_events;
+extern Store* g_store;
 
 Game::Game() :
 	wildcardTree(false),
@@ -1422,9 +1411,9 @@ Item* Game::findItemOfType(Cylinder* cylinder, uint16_t itemId,
 				return item;
 			}
 
-			Container* tmpContainer = item->getContainer();
-			if (tmpContainer) {
-				containers.push_back(tmpContainer);
+			Container* subContainer = item->getContainer();
+			if (subContainer) {
+				containers.push_back(subContainer);
 			}
 		}
 	}
@@ -1437,7 +1426,7 @@ bool Game::removeMoney(Cylinder* cylinder, uint64_t money, uint32_t flags /*= 0*
 		return false;
 	}
 
-	if (money <= 0) {
+	if (money == 0) {
 		return true;
 	}
 
@@ -1492,50 +1481,52 @@ bool Game::removeMoney(Cylinder* cylinder, uint64_t money, uint32_t flags /*= 0*
 
 	for (const auto& moneyEntry : moneyMap) {
 		Item* item = moneyEntry.second;
-		if (moneyEntry.first > money) {
+		if (moneyEntry.first >= money) {
 			uint32_t worth = moneyEntry.first / item->getItemCount();
 			uint32_t removeCount = (money / worth) + 1;
 
 			addMoney(cylinder, (worth * removeCount) - money, flags);
 			internalRemoveItem(item, removeCount);
-			money = 0;
-		} else {
-			internalRemoveItem(item);
-			money -= moneyEntry.first;
-		}
-
-		if (money == 0) {
 			return true;
 		}
+
+		internalRemoveItem(item);
+		money -= moneyEntry.first;
 	}
 	return false;
 }
 
 void Game::addMoney(Cylinder* cylinder, uint64_t money, uint32_t flags /*= 0*/)
 {
-	uint32_t crys = money / 10000;
-	money -= crys * 10000;
-	while (crys > 0) {
-		Item* remaindItem = Item::CreateItem(ITEM_CRYSTAL_COIN, std::min<int32_t>(100, crys));
-
-		ReturnValue ret = internalAddItem(cylinder, remaindItem, INDEX_WHEREEVER, flags);
-		if (ret != RETURNVALUE_NOERROR) {
-			internalAddItem(cylinder->getTile(), remaindItem, INDEX_WHEREEVER, FLAG_NOLIMIT);
-		}
-
-		crys -= std::min<int32_t>(100, crys);
+	if (money == 0) {
+		return;
 	}
 
-	uint16_t plat = money / 100;
-	if (plat != 0) {
-		Item* remaindItem = Item::CreateItem(ITEM_PLATINUM_COIN, plat);
+	uint32_t crystalCoins = money / 10000;
+	money -= crystalCoins * 10000;
+	while (crystalCoins > 0) {
+		const uint16_t count = std::min<uint32_t>(100, crystalCoins);
+
+		Item* remaindItem = Item::CreateItem(ITEM_CRYSTAL_COIN, count);
 
 		ReturnValue ret = internalAddItem(cylinder, remaindItem, INDEX_WHEREEVER, flags);
 		if (ret != RETURNVALUE_NOERROR) {
 			internalAddItem(cylinder->getTile(), remaindItem, INDEX_WHEREEVER, FLAG_NOLIMIT);
 		}
 
-		money -= plat * 100;
+		crystalCoins -= count;
+	}
+
+	uint16_t platinumCoins = money / 100;
+	if (platinumCoins != 0) {
+		Item* remaindItem = Item::CreateItem(ITEM_PLATINUM_COIN, platinumCoins);
+
+		ReturnValue ret = internalAddItem(cylinder, remaindItem, INDEX_WHEREEVER, flags);
+		if (ret != RETURNVALUE_NOERROR) {
+			internalAddItem(cylinder->getTile(), remaindItem, INDEX_WHEREEVER, FLAG_NOLIMIT);
+		}
+
+		money -= platinumCoins * 100;
 	}
 
 	if (money != 0) {
@@ -1612,7 +1603,6 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 				return nullptr;
 			} else {
 				int32_t newItemId = newId;
-
 				if (curType.id == newType.id) {
 					newItemId = curType.decayTo;
 				}
@@ -5010,6 +5000,94 @@ void Game::playerDebugAssert(uint32_t playerId, const std::string& assertLine, c
 	}
 }
 
+void Game::playerPurchaseStoreOffer(uint32_t playerId, uint32_t offerId, const std::string& param)
+{	
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	auto offer = g_store->getOfferById(offerId);
+	if (!offer) {
+		player->sendStoreError(STORE_ERROR_PURCHASE, "Offer not found. Please reopen the store and try again.");
+		return;
+	}
+
+	auto coinBalance = IOAccount::getCoinBalance(player->getAccount());
+	if (coinBalance >= offer->getPrice()) {
+		if (g_store->executeOnBuy(player, &(*offer), param)) {
+			IOAccount::addCoins(player->getAccount(), -static_cast<int32_t>(offer->getPrice()));
+			player->coinBalance -= offer->getPrice();
+			player->sendStorePurchaseCompleted(offer->getMessage());
+			player->sendTextMessage(MESSAGE_EVENT_ADVANCE, "A transaction was successful. For more details, please check your Tibia Coins history.");
+
+			std::string transactionDescription;
+			if (offer->getSubOffers().size() == 0) {
+				transactionDescription = offer->getName();
+			} else {
+				std::ostringstream tmpDesc;
+				bool first = true;
+				for (const auto& subOffer : offer->getSubOffers()) {
+					if (!first) {
+						tmpDesc << ", ";
+					} else {
+						first = false;
+					}
+					tmpDesc << subOffer.getName();
+				}
+				transactionDescription = tmpDesc.str();
+			}
+
+			g_store->onTransactionCompleted(player->getAccount(), -static_cast<int32_t>(offer->getPrice()), transactionDescription);
+		}		
+	} else {
+		player->sendStoreError(STORE_ERROR_PURCHASE, "You do not have enough coins to complete this purchase.");
+	}
+}
+
+void Game::playerTransferCoins(uint32_t playerId, const std::string& recipient, uint16_t amount)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	if (player->coinBalance < amount) {
+		return player->sendStoreError(STORE_ERROR_TRANSFER, "You don't have enough coins to transfer.");
+	}
+
+	if (amount % g_config.getNumber(ConfigManager::STORE_COINS_PACKET_SIZE) != 0) {
+		return player->sendStoreError(STORE_ERROR_TRANSFER, "You can't transfer this amount of coins.");
+	}
+
+	Player *tmpPlayer = g_game.getPlayerByName(recipient);
+	if (!tmpPlayer) {
+		tmpPlayer = new Player(nullptr);
+		if (!IOLoginData::loadPlayerByName(tmpPlayer, recipient)) {
+			delete tmpPlayer;
+			return player->sendStoreError(STORE_ERROR_TRANSFER, "Recipient player not found");
+		}
+	}
+
+	if (tmpPlayer->getAccount() == player->getAccount()) {
+		return player->sendStoreError(STORE_ERROR_TRANSFER, "You can't transfer coins to the same account.");
+	}
+
+	std::string description(player->getName() + " transferred to " + recipient);
+
+	IOAccount::addCoins(player->getAccount(), -static_cast<int32_t>(amount));
+	g_store->onTransactionCompleted(player->getAccount(), -static_cast<int32_t>(amount), description);
+
+	IOAccount::addCoins(tmpPlayer->getAccount(), amount);
+	g_store->onTransactionCompleted(tmpPlayer->getAccount(), amount, description);
+
+	if (tmpPlayer->isOffline()) {
+		delete tmpPlayer;
+	}
+
+	return player->sendStorePurchaseCompleted("You have successfully gifted Tibia Coins.");
+}
+
 void Game::playerLeaveMarket(uint32_t playerId)
 {
 	Player* player = getPlayerByID(playerId);
@@ -5104,7 +5182,7 @@ void Game::playerCreateMarketOffer(uint32_t playerId, uint8_t type, uint16_t spr
 	if (g_config.getBoolean(ConfigManager::MARKET_PREMIUM) && !player->isPremium()) {
 		player->sendMarketLeave();
 		return;
-	}
+	}	
 
 	const ItemType& itt = Item::items.getItemIdByClientId(spriteId);
 	if (itt.id == 0 || itt.wareId == 0) {
@@ -5118,7 +5196,7 @@ void Game::playerCreateMarketOffer(uint32_t playerId, uint8_t type, uint16_t spr
 
 	if (!it.stackable && amount > 2000) {
 		return;
-	}
+	}	
 
 	const uint32_t maxOfferCount = g_config.getNumber(ConfigManager::MAX_MARKET_OFFERS_AT_A_TIME_PER_PLAYER);
 	if (maxOfferCount != 0 && IOMarket::getPlayerOfferCount(player->getGUID()) >= maxOfferCount) {
@@ -5142,25 +5220,33 @@ void Game::playerCreateMarketOffer(uint32_t playerId, uint8_t type, uint16_t spr
 			return;
 		}
 
-		std::forward_list<Item*> itemList = getMarketItemList(it.wareId, amount, depotChest, player->getInbox());
-		if (itemList.empty()) {
-			return;
-		}
-
-		if (it.stackable) {
-			uint16_t tmpAmount = amount;
-			for (Item* item : itemList) {
-				uint16_t removeCount = std::min<uint16_t>(tmpAmount, item->getItemCount());
-				tmpAmount -= removeCount;
-				internalRemoveItem(item, removeCount);
-
-				if (tmpAmount == 0) {
-					break;
-				}
+		if (it.id == ITEM_TIBIACOINS) {
+			if (amount > player->coinBalance) {
+				return;
 			}
+
+			IOAccount::addCoins(player->getAccount(), -static_cast<int32_t>(amount));
 		} else {
-			for (Item* item : itemList) {
-				internalRemoveItem(item);
+			std::forward_list<Item*> itemList = getMarketItemList(it.wareId, amount, depotChest, player->getInbox());
+			if (itemList.empty()) {
+				return;
+			}
+
+			if (it.stackable) {
+				uint16_t tmpAmount = amount;
+				for (Item* item : itemList) {
+					uint16_t removeCount = std::min<uint16_t>(tmpAmount, item->getItemCount());
+					tmpAmount -= removeCount;
+					internalRemoveItem(item, removeCount);
+
+					if (tmpAmount == 0) {
+						break;
+					}
+				}
+			} else {
+				for (Item* item : itemList) {
+					internalRemoveItem(item);
+				}
 			}
 		}
 
@@ -5208,7 +5294,9 @@ void Game::playerCancelMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 			return;
 		}
 
-		if (it.stackable) {
+		if (it.id == ITEM_TIBIACOINS) {
+			IOAccount::addCoins(player->getAccount(), offer.amount);
+		} else if (it.stackable) {
 			uint16_t tmpAmount = offer.amount;
 			while (tmpAmount > 0) {
 				int32_t stackCount = std::min<int32_t>(100, tmpAmount);
@@ -5281,11 +5369,6 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 			return;
 		}
 
-		std::forward_list<Item*> itemList = getMarketItemList(it.wareId, amount, depotChest, player->getInbox());
-		if (itemList.empty()) {
-			return;
-		}
-
 		Player* buyerPlayer = getPlayerByGUID(offer.playerId);
 		if (!buyerPlayer) {
 			buyerPlayer = new Player(nullptr);
@@ -5295,26 +5378,43 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 			}
 		}
 
-		if (it.stackable) {
-			uint16_t tmpAmount = amount;
-			for (Item* item : itemList) {
-				uint16_t removeCount = std::min<uint16_t>(tmpAmount, item->getItemCount());
-				tmpAmount -= removeCount;
-				internalRemoveItem(item, removeCount);
+		if (it.id == ITEM_TIBIACOINS) {
+			if (amount > IOAccount::getCoinBalance(player->getAccount())) {
+				return;
+			}
 
-				if (tmpAmount == 0) {
-					break;
+			IOAccount::addCoins(player->getAccount(), -static_cast<int32_t>(amount));
+			g_store->onTransactionCompleted(player->getAccount(), -static_cast<int32_t>(amount), "Sold on Market");			
+		} else {
+			std::forward_list<Item*> itemList = getMarketItemList(it.wareId, amount, depotChest, player->getInbox());
+			if (itemList.empty()) {
+				return;
+			}
+
+			if (it.stackable) {
+				uint16_t tmpAmount = amount;
+				for (Item* item : itemList) {
+					uint16_t removeCount = std::min<uint16_t>(tmpAmount, item->getItemCount());
+					tmpAmount -= removeCount;
+					internalRemoveItem(item, removeCount);
+
+					if (tmpAmount == 0) {
+						break;
+					}
+				}
+			} else {
+				for (Item* item : itemList) {
+					internalRemoveItem(item);
 				}
 			}
-		} else {
-			for (Item* item : itemList) {
-				internalRemoveItem(item);
-			}
-		}
+		}		
 
 		player->bankBalance += totalPrice;
 
-		if (it.stackable) {
+		if (it.id == ITEM_TIBIACOINS) {
+			IOAccount::addCoins(buyerPlayer->getAccount(), amount);
+			g_store->onTransactionCompleted(buyerPlayer->getAccount(), amount, "Purchased on Market");
+		} else if (it.stackable) {
 			uint16_t tmpAmount = amount;
 			while (tmpAmount > 0) {
 				uint16_t stackCount = std::min<uint16_t>(100, tmpAmount);
@@ -5356,7 +5456,10 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 
 		player->bankBalance -= totalPrice;
 
-		if (it.stackable) {
+		if (it.id == ITEM_TIBIACOINS) {
+			IOAccount::addCoins(player->getAccount(), amount);
+			g_store->onTransactionCompleted(player->getAccount(), amount, "Purchased on Market");
+		} else if (it.stackable) {
 			uint16_t tmpAmount = amount;
 			while (tmpAmount > 0) {
 				uint16_t stackCount = std::min<uint16_t>(100, tmpAmount);
@@ -5388,11 +5491,27 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 		Player* sellerPlayer = getPlayerByGUID(offer.playerId);
 		if (sellerPlayer) {
 			sellerPlayer->bankBalance += totalPrice;
+
+			if (it.id == ITEM_TIBIACOINS) {
+				g_store->onTransactionCompleted(sellerPlayer->getAccount(), -static_cast<int32_t>(amount), "Sold on Market");
+			}			
 		} else {
 			IOLoginData::increaseBankBalance(offer.playerId, totalPrice);
+
+			if (it.id == ITEM_TIBIACOINS) {
+				sellerPlayer = new Player(nullptr);
+
+				if (IOLoginData::loadPlayerById(sellerPlayer, offer.playerId)) {
+					g_store->onTransactionCompleted(sellerPlayer->getAccount(), -static_cast<int32_t>(amount), "Sold on Market");
+				}				
+
+				delete sellerPlayer;
+			}
 		}
 
-		player->onReceiveMail();
+		if (it.id != ITEM_TIBIACOINS) {
+			player->onReceiveMail();
+		}		
 	}
 
 	const int32_t marketOfferDuration = g_config.getNumber(ConfigManager::MARKET_OFFER_DURATION);

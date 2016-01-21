@@ -18,6 +18,7 @@
  */
 
 #include "otpch.h"
+#include "configmanager.h"
 #include <boost/range/adaptor/reversed.hpp>
 #include "protocolgamebase.h"
 #include "game.h"
@@ -26,6 +27,7 @@
 #include "outputmessage.h"
 
 extern Game g_game;
+extern ConfigManager g_config;
 
 void ProtocolGameBase::onConnect()
 {
@@ -474,9 +476,8 @@ void ProtocolGameBase::sendAddCreature(const Creature* creature, const Position&
 	msg.addByte(0x00); // can change pvp framing option
 	msg.addByte(0x00); // expert mode button enabled
 
-	msg.addString("http://static.tibia.com/images/store/");
-	msg.addByte(0x19);
-	msg.addByte(3);
+	msg.addString(g_config.getString(ConfigManager::STORE_IMAGES_URL)); 
+	msg.add<uint16_t>(static_cast<uint16_t>(g_config.getNumber(ConfigManager::STORE_COINS_PACKET_SIZE)));
 
 	writeToOutputBuffer(msg);
 

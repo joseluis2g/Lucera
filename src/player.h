@@ -36,6 +36,7 @@
 #include "groups.h"
 #include "town.h"
 #include "mounts.h"
+#include "store.h"
 
 class House;
 class NetworkMessage;
@@ -117,6 +118,14 @@ struct Skill {
 	uint64_t tries;
 	uint16_t level;
 	uint8_t percent;
+};
+
+struct Kill {
+	uint32_t target;
+	time_t time;
+	bool unavenged;
+
+	Kill(uint32_t _target, time_t _time, bool _unavenged) : target(_target), time(_time), unavenged(_unavenged) {}
 };
 
 typedef std::map<uint32_t, uint32_t> MuteCountMap;
@@ -683,6 +692,7 @@ class Player final : public Creature, public Cylinder
 		int64_t getSkullTicks() const { return skullTicks; }
 		void setSkullTicks(int64_t ticks) { skullTicks = ticks; }
 
+		bool hasKilled(const Player* player) const;
 		bool hasAttacked(const Player* attacked) const;
 		void addAttacked(const Player* attacked);
 		void clearAttacked();
@@ -885,6 +895,10 @@ class Player final : public Creature, public Cylinder
 		void onCloseContainer(const Container* container);
 		void onSendContainer(const Container* container);
 		void autoCloseContainers(const Container* container);
+
+		//store
+		void sendStoreError(StoreError_t errorType, const std::string& message);
+		void sendStorePurchaseCompleted(const std::string& message);
 
 		//inventory
 		void onUpdateInventoryItem(Item* oldItem, Item* newItem);
@@ -1257,7 +1271,7 @@ class Player final : public Creature, public Cylinder
 		int64_t lastPong;
 		int64_t nextAction;
 
-		std::vector<std::pair<std::string, time_t>> unjustifiedKills;
+		std::vector<Kill> unjustifiedKills;
 
 		BedItem* bedItem;
 		Guild* guild;
@@ -1304,6 +1318,7 @@ class Player final : public Creature, public Cylinder
 		int32_t offlineTrainingSkill;
 		int32_t offlineTrainingTime;
 		int32_t idleTime;
+		uint32_t coinBalance;
 
 		uint16_t lastStatsTrainingTime;
 		uint16_t staminaMinutes;

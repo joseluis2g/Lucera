@@ -110,6 +110,8 @@ class ProtocolGameBase : public Protocol {
 		uint32_t m_challengeTimestamp;
 		uint8_t m_challengeRandom;
 
+		uint8_t storeHistoryEntriesPerPage;
+
 		bool m_debugAssertSent;
 		bool m_acceptPackets;
 
