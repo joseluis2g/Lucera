@@ -1,17 +1,18 @@
-#ifndef FS_REWARDCHEST_H
-#define FS_REWARDCHEST_H
+#ifndef FS_REWARD_H
+#define FS_REWARD_H
 
 #include "container.h"
 
-class RewardChest final : public Container
+class Reward :
+	public Container
 {
 public:
-	explicit RewardChest(uint16_t _type);
+	explicit Reward();
 
-	RewardChest* getRewardChest() final {
+	Reward* getReward() final {
 		return this;
 	}
-	const RewardChest* getRewardChest() const final {
+	const Reward* getReward() const final {
 		return this;
 	}
 
@@ -22,8 +23,14 @@ public:
 	void postAddNotification(Thing* thing, const Cylinder* oldParent, int32_t index, cylinderlink_t link = LINK_OWNER) final;
 	void postRemoveNotification(Thing* thing, const Cylinder* newParent, int32_t index, cylinderlink_t link = LINK_OWNER) final;
 
+	//overrides
 	bool canRemove() const final {
-		return false;
+		return true;
+	}
+
+	Cylinder* getParent() const final;
+	Cylinder* getRealParent() const final {
+		return parent;
 	}
 };
 
